@@ -35,6 +35,8 @@ def set_bg(positions):
     for pos in positions:
         pg_pos = to_pygame(pos)
         pg.draw.circle(screen, (0, 255, 0), (pg_pos[0], pg_pos[1]), 3, 0)
+    for i in range(1,len(traj_pos)):
+        pg.draw.line(screen,(255,0,0),to_pygame(traj_pos[i-1]),to_pygame(traj_pos[i]))
     pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
 
 
@@ -52,6 +54,7 @@ background_colour = (255, 255, 255)
 screen.fill(background_colour)
 
 data = json.load(open('P25.json'))
+traj=json.load(open('P25_26_traj.json'))
 bounding_polygon = data["bounding_polygon"]
 formation_positions = data["formation_positions"]
 start_positions = data["start_positions"]
@@ -61,6 +64,11 @@ vehicle_omega_max = data["vehicle_omega_max"]
 vehicle_phi_max = data["vehicle_phi_max"]
 vehicle_t = data["vehicle_t"]
 vehicle_v_max = data["vehicle_v_max"]
+traj_t=traj["t"]
+traj_theta=traj["theta"]
+traj_x=traj["x"]
+traj_y=traj["y"]
+traj_pos=list(zip(traj_x,traj_y))
 
 pg_bounding_polygon = []
 for point in bounding_polygon:
