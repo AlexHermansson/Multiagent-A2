@@ -6,57 +6,66 @@ import time
 
 
 class Virtual_structure():
-
-    def __init__(self):
+""""
+A class for the virtual structure with a center point in the variable mean and the orientation.
+It keeps track of the desired positions for all robots.
+"""
+    def __init__(self, formation):
         self.mean = None
         self.desired_pos = None
+        self.D_list = None
+        self.A_list = None
         self.orientation = None
-        set_center(formation_matrix)
+        set_start_pos(formation)
 
-    def set_center(self, formation_matrix):
 
-        mean_x = np.mean(formation_matrix[0])
-        mean_y = np.mean(formation_matrix[1])
+    def set_des_pos(self, new_mean, new_orientation):
+        """ A function to update the desired positions for the robots when the mean and orientation is changed."""
+        des_pos = []
+        for d, a in zip(self.D_list, self.A_list):
+            des_pos.append(new_mean + d * np.array([np.cos(a + new_orientation), np.sin(a + new_orientation)]))
+
+        self.desired_pos = des_pos
+
+
+    def set_start_pos(self, formation):
+        """Creates the form of the virtual structure."""
+        mean_x = np.mean(formation[:, 0])
+        mean_y = np.mean(formation[:, 1])
         mean = np.array([mean_x, mean_y])
+        dist_list = []
+        angle_list = []
+        for point in formation:
+
+            dist = np.linalg.norm(point - mean)
+            dist_list.append(dist)
+            angle = np.arctan2(point[1] - mean[1], point[0] - mean[0]) - np.pi/2
+            if angle < 0:
+                angle = 2*np.pi + angle
+            angle_list.append(angle)
+
         self.mean = mean
-
-    def set_des_pos(self, formation_matrix):
-
-        pass
-
-def start_pos(formation):
-
-    mean_x = np.mean(formation[:, 0])
-    mean_y = np.mean(formation[:, 1])
-    mean = np.array([mean_x, mean_y])
-    dist_list = []
-    angle_list = []
-    for point in formation:
-
-        dist = np.linalg.norm(point - mean)
-        dist_list.append(dist)
-        angle = np.arctan2(point[1] - mean[1], point[0] - mean[0]) - np.pi/2
-        if angle < 0:
-            angle = 2*np.pi + angle
-        angle_list.append(angle)
-
-    return dist_list, angle_list
-
-
+        self.D_list = dist_list
+        self.A_list = angle_list
 
 
 
 class Robot():
 
-    def __init__(self, location, center):
+    kp = np.diag([10, 10])
+    kv =  np.diag([16, 16])
+
+    def __init__(self, location):
         self.location = location
         self.velocity = np.array([0, 0])
-        self.center = center
-        self.desired_location = center + D * [np.cos(theta), np.sin(theta)]
 
-
-    def control(self):
+    def control(self, desired_position):
         # give input signal
+
+
+        z_hat_dot = 0  #todo: create this variable!
+        u = self.location - kp.dot(self.location - desired_position) - kv.dot(z_hat_dot)
+
         pass
 
     def move(self):
