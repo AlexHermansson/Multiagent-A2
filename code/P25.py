@@ -69,7 +69,6 @@ traj_theta=traj["theta"]
 traj_x=traj["x"]
 traj_y=traj["y"]
 traj_pos=list(zip(traj_x,traj_y))
-
 pg_bounding_polygon = []
 for point in bounding_polygon:
     pg_bounding_polygon.append(to_pygame(point))
@@ -88,5 +87,5 @@ while not done:
         while (t1 - t0 < 2):
             t1 = time.time()
         start = True
-    set_bg(start_positions)
+    set_bg(formation_positions)
     pg.display.flip()
