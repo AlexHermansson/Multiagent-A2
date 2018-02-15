@@ -8,25 +8,59 @@ import time
 class Virtual_structure():
 
     def __init__(self):
-        self.center = None
+        self.mean = None
         self.desired_pos = None
+        self.orientation = None
+        set_center(formation_matrix)
 
-    def create_center(self, formation_matrix):
+    def set_center(self, formation_matrix):
+
+        mean_x = np.mean(formation_matrix[0])
+        mean_y = np.mean(formation_matrix[1])
+        mean = np.array([mean_x, mean_y])
+        self.mean = mean
+
+    def set_des_pos(self, formation_matrix):
+
         pass
 
-    def create_des_pos(self):
-        pass
+def start_pos(formation):
+
+    mean_x = np.mean(formation[:, 0])
+    mean_y = np.mean(formation[:, 1])
+    mean = np.array([mean_x, mean_y])
+    dist_list = []
+    angle_list = []
+    for point in formation:
+
+        dist = np.linalg.norm(point - mean)
+        dist_list.append(dist)
+        angle = np.arctan2(point[1] - mean[1], point[0] - mean[0]) - np.pi/2
+        if angle < 0:
+            angle = 2*np.pi + angle
+        angle_list.append(angle)
+
+    return dist_list, angle_list
+
+
+
 
 
 class Robot():
 
-    def __init__(self):
-        self.location = None
-        self.velocity = None
+    def __init__(self, location, center):
+        self.location = location
+        self.velocity = np.array([0, 0])
+        self.center = center
+        self.desired_location = center + D * [np.cos(theta), np.sin(theta)]
+
 
     def control(self):
         # give input signal
         pass
+
+    def move(self):
+        u = control()
 
 
 def set_bg(positions):
@@ -56,7 +90,7 @@ screen.fill(background_colour)
 data = json.load(open('P25.json'))
 traj=json.load(open('P25_26_traj.json'))
 bounding_polygon = data["bounding_polygon"]
-formation_positions = data["formation_positions"]
+formation_positions = np.array(data["formation_positions"])
 start_positions = data["start_positions"]
 vehicle_L = data["vehicle_L"]
 vehicle_a_max = data["vehicle_a_max"]
@@ -69,6 +103,22 @@ traj_theta=traj["theta"]
 traj_x=traj["x"]
 traj_y=traj["y"]
 traj_pos=list(zip(traj_x,traj_y))
+
+
+
+d_list, a_list = start_pos(formation_positions)
+start_mean = traj_pos[0]
+start_angle = traj_theta[0]
+
+start_pos_list = []
+for dist, angle in zip(d_list, a_list):
+
+    pos = start_mean + dist*np.array([np.cos(angle + start_angle), np.sin(angle + start_angle)])
+    start_pos_list.append(pos)
+
+
+
+
 
 pg_bounding_polygon = []
 for point in bounding_polygon:
@@ -88,5 +138,6 @@ while not done:
         while (t1 - t0 < 2):
             t1 = time.time()
         start = True
-    set_bg(start_positions)
+    set_bg(start_pos_list)
     pg.display.flip()
+
