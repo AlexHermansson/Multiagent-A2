@@ -10,12 +10,13 @@ class Virtual_structure():
     A class for the virtual structure with a center point in the variable mean and the orientation.
     It keeps track of the desired positions for all robots.
     """
-    def __init__(self, formation):
+    def __init__(self):
         self.mean = None
         self.desired_pos = None
         self.D_list = None
         self.A_list = None
         self.orientation = None
+        self.velocity=np.array([0,0])
 
 
     def set_des_pos(self, new_mean, new_orientation):
@@ -23,11 +24,12 @@ class Virtual_structure():
         des_pos = []
         for d, a in zip(self.D_list, self.A_list):
             des_pos.append(new_mean + d * np.array([np.cos(a + new_orientation), np.sin(a + new_orientation)]))
-
+        self.mean=new_mean
+        self.orientation=new_orientation
         self.desired_pos = des_pos
 
 
-    def set_start_pos(self, formation):
+    def set_formation(self, formation):
         """Creates the form of the virtual structure."""
         mean_x = np.mean(formation[:, 0])
         mean_y = np.mean(formation[:, 1])
@@ -80,6 +82,12 @@ def set_bg(positions):
     for i in range(1,len(traj_pos)):
         pg.draw.line(screen,(255,0,0),to_pygame(traj_pos[i-1]),to_pygame(traj_pos[i]))
     pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
+    for pos in vs.desired_pos:
+        pg_pos = to_pygame(pos)
+        pg.draw.circle(screen, (0, 0, 255), (pg_pos[0], pg_pos[1]), 3, 1)
+    pg_mean=to_pygame(vs.mean)
+    pg.draw.circle(screen, (0, 0, 0), pg_mean, 3, 0)
+
 
 
 def to_pygame(coords):
@@ -112,10 +120,14 @@ traj_x=traj["x"]
 traj_y=traj["y"]
 traj_pos=list(zip(traj_x,traj_y))
 
-
 pg_bounding_polygon = []
 for point in bounding_polygon:
     pg_bounding_polygon.append(to_pygame(point))
+
+'''Initialization'''
+vs=Virtual_structure()
+vs.set_formation(formation_positions)
+vs.set_des_pos(traj_pos[0],traj_theta[0])
 
 set_bg(start_positions)
 pg.display.flip()
@@ -132,7 +144,7 @@ while not done:
             t1 = time.time()
         start = True
 
-    set_bg(start_pos_list)
+    set_bg(start_positions)
     pg.display.flip()
 
 
