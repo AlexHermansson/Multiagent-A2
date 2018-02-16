@@ -38,7 +38,7 @@ class Virtual_structure():
         self.init_xi(new_mean, new_orientation)
 
     def set_des_xi(self, new_mean, new_orientation):
-        self.xi_desired = np.array(new_mean[0], new_mean[1], new_orientation, self.D_list, self.A_list)
+        self.xi_desired = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
 
     def init_xi(self, new_mean, new_orientation):
         self.xi = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
@@ -73,12 +73,12 @@ class Virtual_structure():
         k_1 = 4.2 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
-        phi = 1/N * Z_hat.dot(Z_hat)
+        phi = 1/N * Z_hat.T.dot(Z_hat)
         gamma = 1/(K_F*phi + 1/k_1)
         new_velocity = - gamma*K*np.tanh(1/K*(self.xi - self.xi_desired))
         self.xi_velocity = new_velocity
         self.xi = self.xi + self.xi_velocity*self.dt
-        xi_to_structure()
+        self.xi_to_structure()
 
 
     def xi_to_structure(self):
@@ -109,8 +109,8 @@ class Robots():
         # Arclengths that the robots have to move
         s = np.linalg.norm(vs.desired_pos - self.locations)
 
-        z_dot_des_x = vs.velocity[0] - vs.D_list*vs.omega/self.dt*np.sin(vs.orientation + vs.A_list)
-        z_dot_des_y = vs.velocity[1] + vs.D_list*vs.omega/self.dt*np.cos(vs.orientation + vs.A_list)
+        z_dot_des_x = vs.xi_velocity[0] - vs.D_list*vs.omega/self.dt*np.sin(vs.orientation + vs.A_list)
+        z_dot_des_y = vs.xi_velocity[1] + vs.D_list*vs.omega/self.dt*np.cos(vs.orientation + vs.A_list)
         z_dot_des = np.array([z_dot_des_x, z_dot_des_y]).reshape(self.N,2)
         z_hat_dot = self.velocities - z_dot_des
 
@@ -216,7 +216,7 @@ while not done:
         while (t1 - t0 < 2):
             t1 = time.time()
         start = True
-    for t in range(10):
+    for t in range(20):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)
