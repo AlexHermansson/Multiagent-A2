@@ -41,7 +41,7 @@ class Virtual_structure():
         self.xi_desired = np.array(new_mean[0], new_mean[1], new_orientation, self.D_list, self.A_list)
 
     def init_xi(self, new_mean, new_orientation):
-        self.xi = np.array([new_mean[0], new_mean[1], new_orientation, self.D_list, self.A_list])
+        self.xi = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
 
     def set_formation(self, formation):
         """Creates the form of the virtual structure."""
