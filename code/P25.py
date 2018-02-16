@@ -18,8 +18,9 @@ class Virtual_structure():
         self.orientation = None
         self.omega = 0 # angular velocity
         self.step = 0
-        self.velocity=np.array([0,0])
+        self.xi_velocity = np.zeros(3 + 2*7).reshape(-1, 1) # todo: ugly? use N = 7
         self.xi = None
+        self.xi_desired = None
         self.dt = 0.1
 
 
@@ -32,13 +33,15 @@ class Virtual_structure():
         if self.step > 1:
             self.omega = (new_orientation - self.orientation)/0.1
         self.orientation=new_orientation
-        self.desired_pos = des_pos
+        self.desired_pos = np.array(des_pos)
         self.step += 1
-        update_xi(new_mean, new_orientation)
+        init_xi(new_mean, new_orientation)
 
-    def update_xi(self, new_mean, new_orientation):
+    def set_des_xi(self, new_mean, new_orientation):
+        self.xi_desired = np.array(new_mean[0], new_mean[1], new_orientation, self.D_list, self.A_list)
 
-        self.xi = np.array(new_mean, new_orientation, self.D_list, self.A_list)
+    def init_xi(self, new_mean, new_orientation):
+        self.xi = np.array(new_mean[0], new_mean[1], new_orientation, self.D_list, self.A_list)
 
     def set_formation(self, formation):
         """Creates the form of the virtual structure."""
@@ -61,7 +64,7 @@ class Virtual_structure():
         self.A_list = np.array(angle_list)
 
 
-    def update_structure(self, robot_positions, desired_pos):
+    def update_structure(self, robot_positions):
         """Update the velocity for the structure, given the positions of the
         robots and the desired position on the trajectory."""
 
@@ -72,21 +75,27 @@ class Virtual_structure():
         Z_hat = robot_positions - self.desired_pos
         phi = 1/N * Z_hat.dot(Z_hat)
         gamma = 1/(K_F*phi + 1/k_1)
-        new_velocity = - gamma*K*np.tanh(1/K*(self.xi - desired_pos))
-        self.velocity = new_velocity
-        self.xi = self.xi + self.velocity*self.dt
-    
+        new_velocity = - gamma*K*np.tanh(1/K*(self.xi - self.xi_desired))
+        self.xi_velocity = new_velocity
+        self.xi = self.xi + self.xi_velocity*self.dt
+        xi_to_structure()
+
+
+    def xi_to_structure(self):
+        self.mean = np.array([self.xi[0], self.xi[1]])
+        self.orientation = self.xi[2]
+        des_pos = []
+        for d, a in zip(self.D_list, self.A_list):
+            des_pos.append(self.mean + d * np.array([np.cos(a + self.orientation), np.sin(a + self.orientation)]))
+        self.desired_pos = np.array(des_pos)
+
 
 class Robots():
-
-    #kp = np.diag([10, 10])
-    #kv =  np.diag([16, 16])
 
 
     def __init__(self, locations,N=7):
         self.locations = locations
         self.N=N
-        #self.velocity = np.array([0, 0])
         self.velocities = np.zeros(2*N).reshape(N, 2) # if N robots, we need N velocities
         self.v_max = vehicle_v_max
         self.a_max = vehicle_a_max
@@ -196,6 +205,7 @@ start = False
 done = False
 init_pos=False
 time_step=0
+
 while not done:
     for event in pg.event.get():
         if event.type == pg.QUIT:
