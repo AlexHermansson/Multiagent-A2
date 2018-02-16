@@ -73,8 +73,11 @@ class Virtual_structure():
         k_1 = 4.2 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
-        phi = 1/N * Z_hat.T.dot(Z_hat)
+        #phi = 1/N * Z_hat.dot(Z_hat.T)
+        phi = 1/N * np.einsum('ij, ij -> i', Z_hat, Z_hat)
         gamma = 1/(K_F*phi + 1/k_1)
+
+        # todo: this won't work? phi is now fixed at least (I think)
         new_velocity = - gamma*K*np.tanh(1/K*(self.xi - self.xi_desired))
         self.xi_velocity = new_velocity
         self.xi = self.xi + self.xi_velocity*self.dt
