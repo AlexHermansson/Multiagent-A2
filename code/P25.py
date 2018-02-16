@@ -16,6 +16,8 @@ class Virtual_structure():
         self.D_list = None
         self.A_list = None
         self.orientation = None
+        self.omega = 0 # angular velocity
+        self.step = 0
         self.velocity=np.array([0,0])
 
 
@@ -25,9 +27,13 @@ class Virtual_structure():
         for d, a in zip(self.D_list, self.A_list):
             des_pos.append(new_mean + d * np.array([np.cos(a + new_orientation), np.sin(a + new_orientation)]))
         self.mean=new_mean
+        if self.step > 1:
+            self.omega = (new_orientation - orientation)/0.1
         self.orientation=new_orientation
         self.desired_pos = des_pos
+        self.step += 1
 
+    def set_position(self)
 
     def set_formation(self, formation):
         """Creates the form of the virtual structure."""
@@ -46,31 +52,60 @@ class Virtual_structure():
             angle_list.append(angle)
 
         self.mean = mean
-        self.D_list = dist_list
-        self.A_list = angle_list
+        self.D_list = np.array(dist_list)
+        self.A_list = np.array(angle_list)
 
 
 
-class Robot():
+class Robots(N = 7):
 
-    kp = np.diag([10, 10])
-    kv =  np.diag([16, 16])
+    #kp = np.diag([10, 10])
+    #kv =  np.diag([16, 16])
+    kp = np.diag(np.ones(2*N)*10)
+    kv = np.diag(np.ones(2*N)*16)
+    dt = 0.1
+    v_max = vehicle_v_max
+    a_max = vehicle_a_max
+    
 
-    def __init__(self, location):
-        self.location = location
-        self.velocity = np.array([0, 0])
+    def __init__(self, locations):
+        self.locations = locations
+        #self.velocity = np.array([0, 0])
+        self.velocities = np.zeros(2*N).reshape(N, 2) # if N robots, we need N velocities
 
-    def control(self, desired_position):
-        # give input signal
+    def control(self, vs):
+        """A function to give input signal given where the virtual structure, vs, is."""
 
+        # Arclengths that the robots have to move
+        s = np.linalg.norm(vs.desired_pos - self.locations)
 
-        z_hat_dot = 0  #todo: create this variable!
-        u = self.location - kp.dot(self.location - desired_position) - kv.dot(z_hat_dot)
+        z_dot_des_x = vs.velocity[0] - vs.D_list*vs.omega/dt*np.sin(vs.orientation + A_list)
+        z_dot_des_y = vs.velocity[1] + vs.D_list*vs.omega/dt*np.cos(vs.orientation + A_list)
+        z_dot_des = np.array([z_dot_des_x, z_dot_des_y])
+        z_hat_dot = self.velocities - z_dot_des
 
-        pass
+        # location or acceleration? todo: check that it works
+        u = vs.desired_pos - kp.dot(self.locations - vs.desired_pos) - kv.dot(z_hat_dot)
 
-    def move(self):
-        u = control()
+        # make sure the acceleration is not to large
+        if u > a_max:
+            u = u/np.linalg.norm(u)
+
+        return u
+
+    def move(self, vs):
+        """A function to update the lcoation and velocity for one time step."""
+
+        u = control(vs)
+
+        self.locations = 1/2*u*(dt)**2 + self.velocities*dt + self.locations
+
+        new_vel = u*dt + self.velocities
+        # make sure the velocity is within the limit v_max
+        if new_vel > v_max:
+            new_vel = new_vel / np.linalg.norm(new_vel)
+        self.velocities = new_vel
+
 
 
 def set_bg(positions):
