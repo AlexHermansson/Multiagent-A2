@@ -19,6 +19,8 @@ class Virtual_structure():
         self.omega = 0 # angular velocity
         self.step = 0
         self.velocity=np.array([0,0])
+        self.xi = None
+        self.dt = 0.1
 
 
     def set_des_pos(self, new_mean, new_orientation):
@@ -32,7 +34,11 @@ class Virtual_structure():
         self.orientation=new_orientation
         self.desired_pos = des_pos
         self.step += 1
+        update_xi(new_mean, new_orientation)
 
+    def update_xi(self, new_mean, new_orientation):
+
+        self.xi = np.array(new_mean, new_orientation, self.D_list, self.A_list)
 
     def set_formation(self, formation):
         """Creates the form of the virtual structure."""
@@ -55,6 +61,21 @@ class Virtual_structure():
         self.A_list = np.array(angle_list)
 
 
+    def update_structure(self, robot_positions, desired_pos):
+        """Update the velocity for the structure, given the positions of the
+        robots and the desired position on the trajectory."""
+
+        K = 0.5 #0.2 in paper 
+        K_F = 5
+        k_1 = 4.2 #2.3 in paper
+        N = robot_positions.shape[0]
+        Z_hat = robot_positions - self.desired_pos
+        phi = 1/N * Z_hat.dot(Z_hat)
+        gamma = 1/(K_F*phi + 1/k_1)
+        new_velocity = - gamma*K*np.tanh(1/K*(self.xi - desired_pos))
+        self.velocity = new_velocity
+        self.xi = self.xi + self.velocity*self.dt
+    
 
 class Robots():
 
