@@ -28,12 +28,11 @@ class Virtual_structure():
             des_pos.append(new_mean + d * np.array([np.cos(a + new_orientation), np.sin(a + new_orientation)]))
         self.mean=new_mean
         if self.step > 1:
-            self.omega = (new_orientation - orientation)/0.1
+            self.omega = (new_orientation - self.orientation)/0.1
         self.orientation=new_orientation
         self.desired_pos = des_pos
         self.step += 1
 
-    def set_position(self)
 
     def set_formation(self, formation):
         """Creates the form of the virtual structure."""
@@ -57,21 +56,23 @@ class Virtual_structure():
 
 
 
-class Robots(N = 7):
+class Robots():
 
     #kp = np.diag([10, 10])
     #kv =  np.diag([16, 16])
-    kp = np.diag(np.ones(2*N)*10)
-    kv = np.diag(np.ones(2*N)*16)
-    dt = 0.1
-    v_max = vehicle_v_max
-    a_max = vehicle_a_max
-    
 
-    def __init__(self, locations):
+
+    def __init__(self, locations,N=7):
         self.locations = locations
+        self.N=N
         #self.velocity = np.array([0, 0])
         self.velocities = np.zeros(2*N).reshape(N, 2) # if N robots, we need N velocities
+        self.v_max = vehicle_v_max
+        self.a_max = vehicle_a_max
+        self.kp=np.diag(np.ones(N)*10)
+        self.kv=np.diag(np.ones(N)*16)
+        self.dt=0.1
+
 
     def control(self, vs):
         """A function to give input signal given where the virtual structure, vs, is."""
@@ -79,16 +80,17 @@ class Robots(N = 7):
         # Arclengths that the robots have to move
         s = np.linalg.norm(vs.desired_pos - self.locations)
 
-        z_dot_des_x = vs.velocity[0] - vs.D_list*vs.omega/dt*np.sin(vs.orientation + A_list)
-        z_dot_des_y = vs.velocity[1] + vs.D_list*vs.omega/dt*np.cos(vs.orientation + A_list)
-        z_dot_des = np.array([z_dot_des_x, z_dot_des_y])
+        z_dot_des_x = vs.velocity[0] - vs.D_list*vs.omega/self.dt*np.sin(vs.orientation + vs.A_list)
+        z_dot_des_y = vs.velocity[1] + vs.D_list*vs.omega/self.dt*np.cos(vs.orientation + vs.A_list)
+        z_dot_des = np.array([z_dot_des_x, z_dot_des_y]).reshape(self.N,2)
         z_hat_dot = self.velocities - z_dot_des
 
         # location or acceleration? todo: check that it works
-        u = vs.desired_pos - kp.dot(self.locations - vs.desired_pos) - kv.dot(z_hat_dot)
+        #u = vs.desired_pos - self.kp.dot(self.locations - vs.desired_pos) - self.kv.dot(z_hat_dot)
+        u = -self.kp.dot(self.locations - vs.desired_pos) - self.kv.dot(z_hat_dot)
 
         # make sure the acceleration is not to large
-        if u > a_max:
+        if np.linalg.norm(u) > self.a_max:
             u = u/np.linalg.norm(u)
 
         return u
@@ -96,13 +98,13 @@ class Robots(N = 7):
     def move(self, vs):
         """A function to update the lcoation and velocity for one time step."""
 
-        u = control(vs)
+        u = self.control(vs)
 
-        self.locations = 1/2*u*(dt)**2 + self.velocities*dt + self.locations
+        self.locations = 1/2*u*(self.dt)**2 + self.velocities*self.dt + self.locations
 
-        new_vel = u*dt + self.velocities
+        new_vel = u*self.dt + self.velocities
         # make sure the velocity is within the limit v_max
-        if new_vel > v_max:
+        if np.linalg.norm(new_vel) > self.v_max:
             new_vel = new_vel / np.linalg.norm(new_vel)
         self.velocities = new_vel
 
@@ -142,7 +144,7 @@ data = json.load(open('P25.json'))
 traj=json.load(open('P25_26_traj.json'))
 bounding_polygon = data["bounding_polygon"]
 formation_positions = np.array(data["formation_positions"])
-start_positions = data["start_positions"]
+start_positions = np.array(data["start_positions"])
 vehicle_L = data["vehicle_L"]
 vehicle_a_max = data["vehicle_a_max"]
 vehicle_omega_max = data["vehicle_omega_max"]
@@ -153,7 +155,7 @@ traj_t=traj["t"]
 traj_theta=traj["theta"]
 traj_x=traj["x"]
 traj_y=traj["y"]
-traj_pos=list(zip(traj_x,traj_y))
+traj_pos=np.array(list(zip(traj_x,traj_y)))
 
 pg_bounding_polygon = []
 for point in bounding_polygon:
@@ -163,11 +165,13 @@ for point in bounding_polygon:
 vs=Virtual_structure()
 vs.set_formation(formation_positions)
 vs.set_des_pos(traj_pos[0],traj_theta[0])
+robots=Robots(start_positions,start_positions.shape[0])
 
 set_bg(start_positions)
 pg.display.flip()
 start = False
 done = False
+
 while not done:
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -178,8 +182,9 @@ while not done:
         while (t1 - t0 < 2):
             t1 = time.time()
         start = True
-
-    set_bg(start_positions)
+    for t in range(10):
+        robots.move(vs)
+    set_bg(robots.locations)
     pg.display.flip()
 
 
