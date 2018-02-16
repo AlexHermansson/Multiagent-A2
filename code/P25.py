@@ -171,7 +171,8 @@ set_bg(start_positions)
 pg.display.flip()
 start = False
 done = False
-
+init_pos=False
+time_step=0
 while not done:
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -183,7 +184,17 @@ while not done:
             t1 = time.time()
         start = True
     for t in range(10):
-        robots.move(vs)
+        if not init_pos:
+            if not np.isclose(robots.locations,vs.desired_pos).all():
+                robots.move(vs)
+            else:
+                init_pos=True
+                time_step+=1
+        else:
+            vs.set_des_pos(traj_pos[time_step],traj_theta[time_step])
+            robots.move(vs)
+            time_step += 1
+
     set_bg(robots.locations)
     pg.display.flip()
 
