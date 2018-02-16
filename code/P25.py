@@ -35,13 +35,13 @@ class Virtual_structure():
         self.orientation=new_orientation
         self.desired_pos = np.array(des_pos)
         self.step += 1
-        init_xi(new_mean, new_orientation)
+        self.init_xi(new_mean, new_orientation)
 
     def set_des_xi(self, new_mean, new_orientation):
         self.xi_desired = np.array(new_mean[0], new_mean[1], new_orientation, self.D_list, self.A_list)
 
     def init_xi(self, new_mean, new_orientation):
-        self.xi = np.array(new_mean[0], new_mean[1], new_orientation, self.D_list, self.A_list)
+        self.xi = np.array([new_mean[0], new_mean[1], new_orientation, self.D_list, self.A_list])
 
     def set_formation(self, formation):
         """Creates the form of the virtual structure."""
@@ -224,9 +224,10 @@ while not done:
                 init_pos=True
                 time_step+=1
         else:
-            vs.set_des_pos(traj_pos[time_step],traj_theta[time_step])
+            vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
+            vs.update_structure(robots.locations)
             robots.move(vs)
-            time_step += 1
+            #time_step += 1
 
     set_bg(robots.locations)
     pg.display.flip()
