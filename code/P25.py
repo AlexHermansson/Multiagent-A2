@@ -94,7 +94,6 @@ class Robots():
         self.kv=np.diag(np.ones(N)*16)
         self.dt=0.1
 
-
     def control(self, vs):
         """A function to give input signal given where the virtual structure, vs, is."""
 
@@ -153,6 +152,7 @@ def to_pygame(coords):
     return (int(coords[0] * 5 + width / 2 - 150), int(coords[1] * -5 + height / 2 + 200))
 
 
+# PyGame parameters
 pg.init()
 infoObject = pg.display.Info()
 screen = pg.display.set_mode((infoObject.current_w, infoObject.current_h))
@@ -161,6 +161,7 @@ height = infoObject.current_h
 background_colour = (255, 255, 255)
 screen.fill(background_colour)
 
+# Data from the JSON file
 data = json.load(open('P25.json'))
 traj=json.load(open('P25_26_traj.json'))
 bounding_polygon = data["bounding_polygon"]
@@ -178,6 +179,7 @@ traj_x=traj["x"]
 traj_y=traj["y"]
 traj_pos=np.array(list(zip(traj_x,traj_y)))
 
+# Plot the bounding polygon
 pg_bounding_polygon = []
 for point in bounding_polygon:
     pg_bounding_polygon.append(to_pygame(point))
