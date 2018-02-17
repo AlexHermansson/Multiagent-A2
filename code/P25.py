@@ -68,12 +68,13 @@ class Virtual_structure():
         """Update the velocity for the structure, given the positions of the
         robots and the desired position on the trajectory."""
 
-        K = 0.5 #0.2 in paper 
+        K = 0.5 #0.2 in paper
         K_F = 5
         k_1 = 4.2 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
         phi = 1/N * Z_hat.T.dot(Z_hat)
+        phi=np.max(phi)
         gamma = 1/(K_F*phi + 1/k_1)
         new_velocity = - gamma*K*np.tanh(1/K*(self.xi - self.xi_desired))
         self.xi_velocity = new_velocity
@@ -154,6 +155,22 @@ def set_bg(positions):
     pg_mean=to_pygame(vs.mean)
     pg.draw.circle(screen, (0, 0, 0), pg_mean, 3, 0)
 
+def set_data(time):
+
+    font = pg.font.Font(None, 36)
+    pg_time = font.render("%.1f" % time, 1, (10, 10, 10))
+    time_taken = font.render("time taken: ", 1, (10, 10, 10))
+    #speed = font.render("%.3f" % vel, 1, (10, 10, 10))
+    #w = font.render("%.3f" % omega, 1, (10, 10, 10))
+    #omega = font.render("omega: ", 1, (10, 10, 10))
+    #v = font.render("velocity: ", 1, (10, 10, 10))
+    screen.blit(pg_time, (width / 10 * 9 + 10, 20))
+    screen.blit(time_taken, (width / 10 * 8, 20))
+    #screen.blit(w, (width / 10 * 9, 120))
+    #screen.blit(omega, (width / 10 * 8, 120))
+    #screen.blit(speed, (width / 10 * 9, 70))
+    #screen.blit(v, (width / 10 * 8, 70))
+
 
 
 def to_pygame(coords):
@@ -205,6 +222,7 @@ start = False
 done = False
 init_pos=False
 time_step=0
+total_time=0
 
 while not done:
     for event in pg.event.get():
@@ -227,9 +245,14 @@ while not done:
             vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
             vs.update_structure(robots.locations)
             robots.move(vs)
-            #time_step += 1
+            if (np.isclose(traj_pos[time_step], vs.mean).all()):
+                if time_step+1<len(traj_t):
+                    time_step += 1
+            if time_step + 1 < len(traj_t):
+                total_time+=1
 
     set_bg(robots.locations)
+    set_data(total_time*0.1)
     pg.display.flip()
 
 
