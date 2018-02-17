@@ -78,7 +78,12 @@ class Virtual_structure():
         gamma = 1/(K_F*phi + 1/k_1)
 
         # todo: this won't work? phi is now fixed at least (I think)
-        new_velocity = - gamma*K*np.tanh(1/K*(self.xi - self.xi_desired))
+
+        delta_xi = self.xi - self.xi_desired
+        if np.abs(delta_xi[2]) > np.pi:
+            delta_xi[2] = np.sign(delta_xi[2])*(2*np.pi - np.abs(delta_xi[2]))
+
+        new_velocity = - gamma*K*np.tanh(1/K*(delta_xi))
         self.xi_velocity = new_velocity
         self.xi = self.xi + self.xi_velocity*self.dt
         self.xi_to_structure()
