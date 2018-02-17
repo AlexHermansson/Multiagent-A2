@@ -68,14 +68,16 @@ class Virtual_structure():
         """Update the velocity for the structure, given the positions of the
         robots and the desired position on the trajectory."""
 
-        K = 0.5 #0.2 in paper
-        K_F = 5
-        k_1 = 4.2 #2.3 in paper
+        K = 10 #0.2 in paper
+        K_F = 2
+        k_1 = 10 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
-        phi = 1/N * Z_hat.T.dot(Z_hat)
-        phi=np.max(phi)
+        #phi = 1/N * Z_hat.dot(Z_hat.T)
+        phi = 1/N * np.einsum('ij, ij ', Z_hat, Z_hat) # this might work?
         gamma = 1/(K_F*phi + 1/k_1)
+
+        # todo: this won't work? phi is now fixed at least (I think)
         new_velocity = - gamma*K*np.tanh(1/K*(self.xi - self.xi_desired))
         self.xi_velocity = new_velocity
         self.xi = self.xi + self.xi_velocity*self.dt
@@ -121,7 +123,7 @@ class Robots():
 
         # make sure the acceleration is not to large
         if np.linalg.norm(u) > self.a_max:
-            u = u/np.linalg.norm(u)
+            u = (u*self.a_max)/np.linalg.norm(u)
 
         return u
 
@@ -135,7 +137,7 @@ class Robots():
         new_vel = u*self.dt + self.velocities
         # make sure the velocity is within the limit v_max
         if np.linalg.norm(new_vel) > self.v_max:
-            new_vel = new_vel / np.linalg.norm(new_vel)
+            new_vel = (new_vel*self.v_max) / np.linalg.norm(new_vel)
         self.velocities = new_vel
 
 
@@ -245,11 +247,13 @@ while not done:
             vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
             vs.update_structure(robots.locations)
             robots.move(vs)
-            if (np.isclose(traj_pos[time_step], vs.mean).all()):
+
+            if (np.isclose(traj_pos[time_step], vs.mean,1e-2,1e-3).all()):
                 if time_step+1<len(traj_t):
                     time_step += 1
             if time_step + 1 < len(traj_t):
                 total_time+=1
+
 
     set_bg(robots.locations)
     set_data(total_time*0.1)
