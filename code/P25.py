@@ -212,8 +212,8 @@ def set_data(time):
     #w = font.render("%.3f" % omega, 1, (10, 10, 10))
     #omega = font.render("omega: ", 1, (10, 10, 10))
     #v = font.render("velocity: ", 1, (10, 10, 10))
-    screen.blit(pg_time, (width / 10 * 9 + 10, 20))
-    screen.blit(time_taken, (width / 10 * 8, 20))
+    screen.blit(pg_time, (width / 10 * 6 + 10, 20))
+    screen.blit(time_taken, (width / 10 * 5, 20))
     #screen.blit(w, (width / 10 * 9, 120))
     #screen.blit(omega, (width / 10 * 8, 120))
     #screen.blit(speed, (width / 10 * 9, 70))
@@ -279,7 +279,7 @@ while not done:
     if not start:
         t0 = time.time()
         t1 = 0
-        while (t1 - t0 < 2):
+        while (t1 - t0 < 1):
             t1 = time.time()
         start = True
     for t in range(15):
