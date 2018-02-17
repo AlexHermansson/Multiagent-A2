@@ -68,8 +68,8 @@ class Virtual_structure():
         """Update the velocity for the structure, given the positions of the
         robots and the desired position on the trajectory."""
 
-        K = 10 #0.2 in paper
-        K_F = 2
+        K = 5 #0.2 in paper
+        K_F = 1
         k_1 = 10 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
@@ -241,7 +241,7 @@ while not done:
         while (t1 - t0 < 2):
             t1 = time.time()
         start = True
-    for t in range(20):
+    for t in range(15):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)
