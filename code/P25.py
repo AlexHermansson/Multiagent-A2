@@ -74,7 +74,7 @@ class Virtual_structure():
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
         #phi = 1/N * Z_hat.dot(Z_hat.T)
-        phi = 1/N * np.einsum('ij, ij -> i', Z_hat, Z_hat)
+        phi = 1/N * np.einsum('ij, ij ', Z_hat, Z_hat) # this might work?
         gamma = 1/(K_F*phi + 1/k_1)
 
         # todo: this won't work? phi is now fixed at least (I think)
@@ -219,7 +219,7 @@ while not done:
         while (t1 - t0 < 2):
             t1 = time.time()
         start = True
-    for t in range(20):
+    for t in range(10):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)
@@ -230,7 +230,7 @@ while not done:
             vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
             vs.update_structure(robots.locations)
             robots.move(vs)
-            #time_step += 1
+            time_step += 1
 
     set_bg(robots.locations)
     pg.display.flip()
