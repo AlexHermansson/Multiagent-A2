@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 import json
 import pygame as pg
 import time
+import random
+
+
+
 
 
 class Virtual_structure():
@@ -10,7 +14,7 @@ class Virtual_structure():
     A class for the virtual structure with a center point in the variable mean and the orientation.
     It keeps track of the desired positions for all robots.
     """
-    def __init__(self):
+    def __init__(self,n_robots):
         self.mean = None
         self.desired_pos = None
         self.D_list = None
@@ -18,7 +22,7 @@ class Virtual_structure():
         self.orientation = None
         self.omega = 0 # angular velocity
         self.step = 0
-        self.xi_velocity = np.zeros(3 + 2*7).reshape(-1, 1) # todo: ugly? use N = 7
+        self.xi_velocity = np.zeros(3 + 2*n_robots).reshape(-1, 1)
         self.xi = None
         self.xi_desired = None
         self.dt = 0.1
@@ -110,6 +114,10 @@ class Robots():
         self.kp=np.diag(np.ones(N)*10)
         self.kv=np.diag(np.ones(N)*16)
         self.dt=0.1
+        self.colors=colors(N)
+        self.all_locations=[]
+        self.start=False
+
 
     def control(self, vs):
         """A function to give input signal given where the virtual structure, vs, is."""
@@ -138,6 +146,11 @@ class Robots():
         u = self.control(vs)
 
         self.locations = 1/2*u*(self.dt)**2 + self.velocities*self.dt + self.locations
+        if self.start is True:
+            self.all_locations.append(self.locations)
+            if len(self.all_locations)>500:
+                self.all_locations.pop(0)
+
 
         new_vel = u*self.dt + self.velocities
         # make sure the velocity is within the limit v_max
@@ -146,15 +159,43 @@ class Robots():
         self.velocities = new_vel
 
 
+def colors(n):
+    red=(255,0,0)
+    orange=(255,100,0)
+    green=(0,255,0)
+    light_blue=(0,255,255)
+    blue=(0,0,255)
+    purple=(100,0,255)
+    pink=(225,0,255)
+    col=[red,orange,green,light_blue,blue,purple,pink]
+    #todo:deal with more than 7 robots
+    '''ret = []
+    r = int(random.random() * 256)
+    g = int(random.random() * 256)
+    b = int(random.random() * 256)
+    step = 256 / n
+    for i in range(n):
+        r += step
+        g += step
+        b += step
+        r = int(r) % 256
+        g = int(g) % 256
+        b = int(b) % 256
+        ret.append((r, g, b))'''
 
-def set_bg(positions):
+    return col
+
+def set_bg():
     '''set initial and final position'''
     screen.fill((255, 255, 255))
-    for pos in positions:
-        pg_pos = to_pygame(pos)
-        pg.draw.circle(screen, (0, 255, 0), (pg_pos[0], pg_pos[1]), 3, 0)
+    for i in range(len(robots.locations)):
+        pg_pos = to_pygame(robots.locations[i])
+        pg.draw.circle(screen, robots.colors[i], (pg_pos[0], pg_pos[1]), 3, 0)
+        if len(robots.all_locations)>1:
+            for p in range(1,len(robots.all_locations)):
+                pg.draw.line(screen,robots.colors[i],to_pygame(robots.all_locations[p-1][i]),to_pygame(robots.all_locations[p][i]))
     for i in range(1,len(traj_pos)):
-        pg.draw.line(screen,(255,0,0),to_pygame(traj_pos[i-1]),to_pygame(traj_pos[i]))
+        pg.draw.line(screen,(0,0,0),to_pygame(traj_pos[i-1]),to_pygame(traj_pos[i]))
     pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
     for pos in vs.desired_pos:
         pg_pos = to_pygame(pos)
@@ -218,12 +259,12 @@ for point in bounding_polygon:
     pg_bounding_polygon.append(to_pygame(point))
 
 '''Initialization'''
-vs=Virtual_structure()
+vs=Virtual_structure(len(formation_positions))
 vs.set_formation(formation_positions)
 vs.set_des_pos(traj_pos[0],traj_theta[0])
 robots=Robots(start_positions,start_positions.shape[0])
 
-set_bg(start_positions)
+set_bg()
 pg.display.flip()
 start = False
 done = False
@@ -248,6 +289,7 @@ while not done:
             else:
                 init_pos=True
                 time_step+=1
+                robots.start=True
         else:
             vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
             vs.update_structure(robots.locations)
@@ -256,11 +298,12 @@ while not done:
             if (np.isclose(traj_pos[time_step], vs.mean,1e-2,1e-3).all()):
                 if time_step+1<len(traj_t):
                     time_step += 1
+
             if time_step + 1 < len(traj_t):
                 total_time+=1
 
 
-    set_bg(robots.locations)
+    set_bg()
     set_data(total_time*0.1)
     pg.display.flip()
 
