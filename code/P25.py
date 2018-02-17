@@ -81,7 +81,7 @@ class Virtual_structure():
 
         delta_xi = self.xi - self.xi_desired
         if np.abs(delta_xi[2]) > np.pi:
-            delta_xi[2] = np.sign(delta_xi[2])*(2*np.pi - np.abs(delta_xi[2]))
+            delta_xi[2] = -np.sign(delta_xi[2])*(2*np.pi - np.abs(delta_xi[2]))
 
         new_velocity = - gamma*K*np.tanh(1/K*(delta_xi))
         self.xi_velocity = new_velocity
