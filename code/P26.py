@@ -112,7 +112,7 @@ class Robots():
         self.v_max = vehicle_v_max
         self.a_max = vehicle_a_max
         self.kp=np.diag(np.ones(N)*10)
-        self.kv=np.diag(np.ones(N)*16)
+        self.kv=np.diag(np.ones(N)*7)
         self.dt=0.1
         self.colors=colors(N)
         self.all_locations=[]
@@ -135,8 +135,9 @@ class Robots():
         u = -self.kp.dot(self.locations - vs.desired_pos) - self.kv.dot(z_hat_dot)
 
         # make sure the acceleration is not to large
-        if np.linalg.norm(u) > self.a_max:
-            u = (u * self.a_max) / np.linalg.norm(u, axis=1).reshape(-1, 1)
+        for i in range(len(u)):
+            if np.linalg.norm(u[i]) >self.a_max:
+                u[i] = (u[i]*self.a_max)/np.linalg.norm(u[i])
 
         return u
 
@@ -154,8 +155,9 @@ class Robots():
 
         new_vel = u*self.dt + self.velocities
         # make sure the velocity is within the limit v_max
-        if np.linalg.norm(new_vel) > self.v_max:
-            new_vel = (new_vel * self.v_max) / np.linalg.norm(new_vel, axis=1).reshape(-1, 1)
+        for i in range(len(new_vel)):
+            if np.linalg.norm(new_vel[i]) > self.v_max:
+                new_vel[i] = (new_vel[i]*self.v_max) / np.linalg.norm(new_vel[i])
         self.velocities = new_vel
 
 
@@ -359,7 +361,7 @@ while not done:
         while (t1 - t0 < 1):
             t1 = time.time()
         start = True
-    for t in range(15):
+    for t in range(5):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)
@@ -382,6 +384,7 @@ while not done:
             CR7=traj_pos[time_step]
             robot_index=grid_check(CR7)
             z_des = vs.xi[0:2] + (CR7 - robots.locations[robot_index])
+            #vs.set_des_pos(z_des,np.pi/2)
             vs.set_des_xi(z_des, np.pi/2)
             vs.update_structure(robots.locations)
             robots.move(vs)
