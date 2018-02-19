@@ -43,6 +43,12 @@ class Virtual_structure():
     def set_des_xi(self, new_mean, new_orientation):
         self.xi_desired = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
 
+        des_pos = []
+        for d, a in zip(self.D_list, self.A_list):
+            des_pos.append(new_mean + d * np.array([np.cos(a + new_orientation), np.sin(a + new_orientation)]))
+        self.desired_pos = np.array(des_pos)
+
+
     def init_xi(self, new_mean, new_orientation):
         self.xi = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
 
@@ -76,8 +82,7 @@ class Virtual_structure():
         k_1 = 2.3 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
-        #phi = 1/N * Z_hat.dot(Z_hat.T)
-        phi = 1/N * np.einsum('ij, ij ', Z_hat, Z_hat) # this might work?
+        phi = 1/N * np.einsum('ij, ij ', Z_hat, Z_hat)
         gamma = 1/(K_F*phi + 1/k_1)
 
         # todo: this won't work? phi is now fixed at least (I think)
@@ -121,8 +126,8 @@ class Robots():
         self.velocities = np.zeros(2*N).reshape(N, 2) # if N robots, we need N velocities
         self.v_max = vehicle_v_max
         self.a_max = vehicle_a_max
-        self.kp=np.diag(np.ones(N)*10)
-        self.kv=np.diag(np.ones(N)*16)
+        self.kp=np.diag(np.ones(N)*15)
+        self.kv=np.diag(np.ones(N)*10)
         self.dt=0.1
         self.colors=colors(N)
         self.all_locations=[]
@@ -316,9 +321,9 @@ while not done:
                 time_step+=1
                 robots.start=True
         else:
-            #vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
-            vs.init_pos(traj_pos[time_step],traj_theta[time_step])
-            #vs.update_structure(robots.locations)
+            vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
+            #vs.init_pos(traj_pos[time_step],traj_theta[time_step])
+            vs.update_structure(robots.locations)
             robots.move(vs)
             if time_step + 1 < len(traj_t):
                 time_step+=1
