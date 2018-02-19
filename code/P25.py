@@ -71,9 +71,9 @@ class Virtual_structure():
         """Update the velocity for the structure, given the positions of the
         robots and the desired position on the trajectory."""
 
-        K = 5 #0.2 in paper
+        K = 0.2 #0.2 in paper
         K_F = 2
-        k_1 = 10 #2.3 in paper
+        k_1 = 2.3 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
         #phi = 1/N * Z_hat.dot(Z_hat.T)
@@ -96,7 +96,7 @@ class Virtual_structure():
         phi_dot = 2/N * np.einsum('ij, ij', Z_hat, Z_hat_dot)
         self.xi_acceleration = -gamma*1/np.cosh(1/K*(delta_xi)**2)*self.xi_velocity + 2*gamma**2*K_F/N*phi_dot*K*np.tanh(1/K*delta_xi)
 
-        self.xi = self.xi + self.xi_velocity*self.dt #+ 1/2*self.xi_acceleration*(self.dt)**2
+        self.xi = self.xi + self.xi_velocity*self.dt + 1/2*self.xi_acceleration*(self.dt)**2
         self.xi_to_structure()
 
 
@@ -223,6 +223,7 @@ def set_bg():
         pg_pos = to_pygame(pos)
         pg.draw.circle(screen, (0, 0, 255), (pg_pos[0], pg_pos[1]), 3, 1)
     pg_mean=to_pygame(vs.mean)
+    pg.draw.circle(screen,(0,255,255),to_pygame(traj_pos[time_step]),5,0)
     pg.draw.circle(screen, (0, 0, 0), pg_mean, 3, 0)
 
 def set_data(time):
@@ -285,13 +286,13 @@ vs=Virtual_structure(len(formation_positions))
 vs.set_formation(formation_positions)
 vs.init_pos(traj_pos[0],traj_theta[0])
 robots=Robots(start_positions,start_positions.shape[0])
-
+time_step=0
 set_bg()
 pg.display.flip()
 start = False
 done = False
 init_pos=False
-time_step=0
+
 total_time=0
 
 while not done:
@@ -304,11 +305,11 @@ while not done:
         while (t1 - t0 < 1):
             t1 = time.time()
         start = True
-    for t in range(20):
+    for t in range(10):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
-                vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
-                vs.update_structure(robots.locations)
+                #vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
+                #vs.update_structure(robots.locations)
                 robots.move(vs)
             else:
                 init_pos=True
@@ -317,18 +318,19 @@ while not done:
         else:
             #vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
             vs.init_pos(traj_pos[time_step],traj_theta[time_step])
-            vs.update_structure(robots.locations)
+            #vs.update_structure(robots.locations)
             robots.move(vs)
-            '''if time_step + 1 < len(traj_t):
+            if time_step + 1 < len(traj_t):
                 time_step+=1
-                total_time+=1'''
+                total_time+=1
 
-            if (np.isclose(traj_pos[time_step], vs.mean,1e-2,1e-3).all()):
+            #if (np.isclose(traj_pos[time_step], vs.mean,1e-2,1e-3).all()):
+            '''if np.linalg.norm(traj_pos[time_step]-vs.mean)<1:
                 if time_step+1<len(traj_t):
                     time_step += 1
 
             if time_step + 1 < len(traj_t):
-                total_time+=1
+                total_time+=1'''
 
 
     set_bg()
