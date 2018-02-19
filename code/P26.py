@@ -182,7 +182,7 @@ def create_grid():
 	x_grid_points = np.arange(1, 4)*(x_biggest - x_smallest)/4
 	y_grid_points = np.arange(1, 3)*(y_biggest - y_smallest)/3
 
-	return x_grid_points, y_grid_points
+	return x_grid_points, y_grid_points, x_smallest,x_biggest,y_smallest,y_biggest
 
 
 def grid_check(CR_pos):
@@ -194,37 +194,37 @@ def grid_check(CR_pos):
 		return None
 
 	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[1]:
-		return 0
+		return 4
 
 	elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[1]:
-		return 1
+		return 7
 
 	elif CR_x > xg[2] and CR_y > yg[1]:
 		return None
 
 	elif CR_x < xg[0] and CR_y > yg[0] and CR_y < yg[1]:
-		return 2
+		return 1
 
 	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[0] and CR_y < yg[1]:
 		return 3
 
 	elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[0] and CR_y < yg[1]:
-		return 4
-
-	elif CR_x > xg[2] and CR_y > yg[0] and CR_y < yg[1]:
-		return 5
-
-	elif CR_x < xg[0] and CR_y < yg[0]:
 		return 6
 
+	elif CR_x > xg[2] and CR_y > yg[0] and CR_y < yg[1]:
+		return 9
+
+	elif CR_x < xg[0] and CR_y < yg[0]:
+		return 0
+
 	elif CR_x > xg[0] and CR_x < xg[1] and CR_y < yg[0]:
-		return 7
+		return 2
 
 	elif CR_x > xg[1] and CR_x < xg[2] and CR_y < yg[0]:
-		return 8
+		return 5
 
 	elif CR_x > xg[2] and CR_y < yg[0]:
-		return 9
+		return 8
 
 def colors(n):
     red=(255,0,0)
@@ -252,7 +252,7 @@ def colors(n):
 
     return ret
 
-def set_bg():
+def set_bg(cr7):
     '''set initial and final position'''
     screen.fill((255, 255, 255))
     for i in range(len(robots.locations)):
@@ -269,20 +269,26 @@ def set_bg():
         pg.draw.circle(screen, (0, 0, 255), (pg_pos[0], pg_pos[1]), 3, 1)
     pg_mean=to_pygame(vs.mean)
     pg.draw.circle(screen, (0, 0, 0), pg_mean, 3, 0)
+    pg.draw.circle(screen, (0,0,0), to_pygame(cr7),5,0)
+    for x in xg:
+        pg.draw.line(screen, (0, 0, 0), to_pygame([x,ys]), to_pygame([x,YB]))
+    for y in yg:
+        pg.draw.line(screen, (0, 0, 0), to_pygame([xs,y]), to_pygame([XB,y]))
 
-def set_data(time):
+
+def set_data(time,index):
 
     font = pg.font.Font(None, 36)
     pg_time = font.render("%.1f" % time, 1, (10, 10, 10))
     time_taken = font.render("time taken: ", 1, (10, 10, 10))
-    #speed = font.render("%.3f" % vel, 1, (10, 10, 10))
+    idx = font.render("%i" % index, 1, (10, 10, 10))
     #w = font.render("%.3f" % omega, 1, (10, 10, 10))
-    #omega = font.render("omega: ", 1, (10, 10, 10))
+    ind = font.render("index: ", 1, (10, 10, 10))
     #v = font.render("velocity: ", 1, (10, 10, 10))
     screen.blit(pg_time, (width / 10 * 6 + 10, 20))
     screen.blit(time_taken, (width / 10 * 5, 20))
-    #screen.blit(w, (width / 10 * 9, 120))
-    #screen.blit(omega, (width / 10 * 8, 120))
+    screen.blit(idx, (width / 10 * 9, 120))
+    screen.blit(ind, (width / 10 * 8, 120))
     #screen.blit(speed, (width / 10 * 9, 70))
     #screen.blit(v, (width / 10 * 8, 70))
 
@@ -320,7 +326,7 @@ traj_x=traj["x"]
 traj_y=traj["y"]
 traj_pos=np.array(list(zip(traj_x,traj_y)))
 
-xg, yg = create_grid()
+xg, yg,xs,XB,ys,YB = create_grid()
 
 # Plot the bounding polygon
 pg_bounding_polygon = []
@@ -330,16 +336,18 @@ for point in bounding_polygon:
 '''Initialization'''
 vs=Virtual_structure(len(formation_positions))
 vs.set_formation(formation_positions)
-vs.set_des_pos(traj_pos[0],traj_theta[0])
+vs.set_des_pos(vs.mean,np.pi/2)
 robots=Robots(start_positions,start_positions.shape[0])
 
-set_bg()
+CR7=traj_pos[0]
+set_bg(CR7)
 pg.display.flip()
 start = False
 done = False
 init_pos=False
 time_step=0
 total_time=0
+robot_index=10000
 
 while not done:
     for event in pg.event.get():
@@ -360,7 +368,7 @@ while not done:
                 time_step+=1
                 robots.start=True
         else:
-            vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
+            '''vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
             vs.update_structure(robots.locations)
             robots.move(vs)
 
@@ -370,10 +378,15 @@ while not done:
 
             if time_step + 1 < len(traj_t):
                 total_time+=1
+            '''
+            CR7=traj_pos[time_step]
+            robot_index=grid_check(CR7)
+            if time_step + 1 < len(traj_t):
+                time_step+=1
 
 
-    set_bg()
-    set_data(total_time*0.1)
+    set_bg(CR7)
+    set_data(total_time*0.1,robot_index)
     pg.display.flip()
 
 
