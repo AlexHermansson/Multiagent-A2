@@ -379,8 +379,13 @@ while not done:
             if time_step + 1 < len(traj_t):
                 total_time+=1
             '''
-            CR7=traj_pos[time_step]
+            CR7=traj_pos[0]
             robot_index=grid_check(CR7)
+            z_des = vs.xi[0:1] + (CR7 - robots.locations[robot_index])
+            vs.set_des_xi(z_des, np.pi/2)
+            vs.update_structure(robots.locations)
+            robots.move(vs)
+
             if time_step + 1 < len(traj_t):
                 time_step+=1
 
