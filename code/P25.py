@@ -136,7 +136,7 @@ class Robots():
 
         # make sure the acceleration is not to large
         if np.linalg.norm(u) > self.a_max:
-            u = (u*self.a_max)/np.linalg.norm(u)
+            u = (u*self.a_max)/np.linalg.norm(u, axis = 1).reshape(-1, 1)
 
         return u
 
@@ -155,7 +155,7 @@ class Robots():
         new_vel = u*self.dt + self.velocities
         # make sure the velocity is within the limit v_max
         if np.linalg.norm(new_vel) > self.v_max:
-            new_vel = (new_vel*self.v_max) / np.linalg.norm(new_vel)
+            new_vel = (new_vel*self.v_max) / np.linalg.norm(new_vel, axis = 1).reshape(-1, 1)
         self.velocities = new_vel
 
 
@@ -282,7 +282,7 @@ while not done:
         while (t1 - t0 < 1):
             t1 = time.time()
         start = True
-    for t in range(15):
+    for t in range(10):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)
@@ -291,16 +291,20 @@ while not done:
                 time_step+=1
                 robots.start=True
         else:
-            vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
-            vs.update_structure(robots.locations)
+            #vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
+            vs.set_des_pos(traj_pos[time_step],traj_theta[time_step])
+            #vs.update_structure(robots.locations)
             robots.move(vs)
+            if time_step + 1 < len(traj_t):
+                time_step+=1
+                total_time+=1
 
-            if (np.isclose(traj_pos[time_step], vs.mean,1e-2,1e-3).all()):
+            '''if (np.isclose(traj_pos[time_step], vs.mean,1e-2,1e-3).all()):
                 if time_step+1<len(traj_t):
                     time_step += 1
 
             if time_step + 1 < len(traj_t):
-                total_time+=1
+                total_time+=1'''
 
 
     set_bg()

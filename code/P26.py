@@ -136,7 +136,7 @@ class Robots():
 
         # make sure the acceleration is not to large
         if np.linalg.norm(u) > self.a_max:
-            u = (u*self.a_max)/np.linalg.norm(u)
+            u = (u * self.a_max) / np.linalg.norm(u, axis=1).reshape(-1, 1)
 
         return u
 
@@ -155,7 +155,7 @@ class Robots():
         new_vel = u*self.dt + self.velocities
         # make sure the velocity is within the limit v_max
         if np.linalg.norm(new_vel) > self.v_max:
-            new_vel = (new_vel*self.v_max) / np.linalg.norm(new_vel)
+            new_vel = (new_vel * self.v_max) / np.linalg.norm(new_vel, axis=1).reshape(-1, 1)
         self.velocities = new_vel
 
 
@@ -379,15 +379,16 @@ while not done:
             if time_step + 1 < len(traj_t):
                 total_time+=1
             '''
-            CR7=traj_pos[0]
+            CR7=traj_pos[time_step]
             robot_index=grid_check(CR7)
-            z_des = vs.xi[0:1] + (CR7 - robots.locations[robot_index])
+            z_des = vs.xi[0:2] + (CR7 - robots.locations[robot_index])
             vs.set_des_xi(z_des, np.pi/2)
             vs.update_structure(robots.locations)
             robots.move(vs)
 
             if time_step + 1 < len(traj_t):
                 time_step+=1
+                total_time+=1
 
 
     set_bg(CR7)
