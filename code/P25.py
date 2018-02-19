@@ -87,21 +87,20 @@ class Virtual_structure():
 
         # todo: this won't work? phi is now fixed at least (I think)
 
-
         delta_xi = self.xi - self.xi_desired
         old_xi_velocity = self.xi_velocity
         if np.abs(delta_xi[2]) > np.pi:
             delta_xi[2] = -np.sign(delta_xi[2])*(2*np.pi - np.abs(delta_xi[2]))
 
-        self.xi_velocity = -gamma*K*np.tanh(1/K*(delta_xi))
+        #self.xi_velocity = -gamma*K*np.tanh(1/K*(delta_xi))
+        self.xi_velocity = -k_1 * K * np.tanh(1 / K * (delta_xi))
 
-        z_dot_des_x = vs.xi_velocity[0] - vs.D_list*vs.omega*np.sin(vs.orientation + vs.A_list)
-        z_dot_des_y = vs.xi_velocity[1] + vs.D_list*vs.omega*np.cos(vs.orientation + vs.A_list)
-        Z_hat_dot = (robots.velocities - np.array([z_dot_des_x, z_dot_des_y]).reshape(N, 2))
-        phi_dot = 2/N * np.einsum('ij, ij', Z_hat, Z_hat_dot)
-        self.xi_acceleration = -gamma*1/np.cosh(1/K*(delta_xi)**2)*self.xi_velocity + 2*gamma**2*K_F/N*phi_dot*K*np.tanh(1/K*delta_xi)
-
-        self.xi = self.xi + self.xi_velocity*self.dt + 1/2*self.xi_acceleration*(self.dt)**2
+        '''z_dot_des_x = vs.xi_velocity[0] - vs.D_list*vs.xi_velocity[2]*np.sin(vs.orientation + vs.A_list)
+        z_dot_des_y = vs.xi_velocity[1] + vs.D_list*vs.xi_velocity[2]*np.cos(vs.orientation + vs.A_list)
+        Z_hat_dot = (robots.velocities - np.array([z_dot_des_x, z_dot_des_y]).reshape(N, 2))'''
+        #phi_dot = 2/N * np.einsum('ij, ij', Z_hat, Z_hat_dot)
+        #self.xi_acceleration = -gamma*1/np.cosh(1/K*(delta_xi)**2)*self.xi_velocity + 2*gamma**2*K_F/N*phi_dot*K*np.tanh(1/K*delta_xi)
+        self.xi = self.xi + self.xi_velocity# + 1/2*self.xi_acceleration*(self.dt)**2
         self.xi_to_structure()
 
 
@@ -113,8 +112,8 @@ class Virtual_structure():
             des_pos.append(self.mean + d * np.array([np.cos(a + self.orientation), np.sin(a + self.orientation)]))
         self.desired_pos = np.array(des_pos)
         self.omega = self.xi_velocity[2]
-        self.acceleration = self.xi_acceleration[0:2]
-        self.tau = self.xi_acceleration[2]
+        #self.acceleration = self.xi_acceleration[0:2]
+        #self.tau = self.xi_acceleration[2]
 
 
 class Robots():
