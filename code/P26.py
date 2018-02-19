@@ -159,6 +159,73 @@ class Robots():
         self.velocities = new_vel
 
 
+def create_grid():
+
+	x_smallest = np.inf
+	x_biggest = -np.inf
+	y_smallest = np.inf
+	y_biggest = -np.inf
+	for point in bounding_polygon:
+		if point[0] < x_smallest:
+			x_smallest = point[0]
+
+		if point[1] < y_smallest:
+			y_smallest = point[1]
+
+		if point[0] > x_biggest:
+			x_biggest = point[0]
+
+		if point[1] > y_biggest:
+			y_biggest = point[1]
+	
+	# todo: Maybe change the grid. Too large space is now uncovered.
+	x_grid_points = np.arange(1, 4)*(x_biggest - x_smallest)/4
+	y_grid_points = np.arange(1, 3)*(y_biggest - y_smallest)/3
+
+	return x_grid_points, y_grid_points
+
+
+def grid_check(CR_pos):
+	"""grid check for a 4-4-2 formation, returns an index from 0 to 9."""
+
+	CR_x, CR_y = CR_pos
+
+	if CR_x < xg[0] and CR_y > yg[1]:
+		return None
+
+	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[1]:
+		return 0
+
+	elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[1]:
+		return 1
+
+	elif CR_x > xg[2] and CR_y > yg[1]:
+		return None
+
+	elif CR_x < xg[0] and CR_y > yg[0] and CR_y < yg[1]:
+		return 2
+
+	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[0] and CR_y < yg[1]:
+		return 3
+
+	elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[0] and CR_y < yg[1]:
+		return 4
+
+	elif CR_x > xg[2] and CR_y > yg[0] and CR_y < yg[1]:
+		return 5
+
+	elif CR_x < xg[0] and CR_y < yg[0]:
+		return 6
+
+	elif CR_x > xg[0] and CR_x < xg[1] and CR_y < yg[0]:
+		return 7
+
+	elif CR_x > xg[1] and CR_x < xg[2] and CR_y < yg[0]:
+		return 8
+
+	elif CR_x > xg[2] and CR_y < yg[0]:
+		return 9
+
 def colors(n):
     red=(255,0,0)
     orange=(255,100,0)
@@ -252,6 +319,8 @@ traj_theta=traj["theta"]
 traj_x=traj["x"]
 traj_y=traj["y"]
 traj_pos=np.array(list(zip(traj_x,traj_y)))
+
+xg, yg = create_grid()
 
 # Plot the bounding polygon
 pg_bounding_polygon = []
