@@ -43,11 +43,6 @@ class Virtual_structure():
     def set_des_xi(self, new_mean, new_orientation):
         self.xi_desired = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
 
-        des_pos = []
-        for d, a in zip(self.D_list, self.A_list):
-            des_pos.append(new_mean + d * np.array([np.cos(a + new_orientation), np.sin(a + new_orientation)]))
-        self.desired_pos = np.array(des_pos)
-
 
     def init_xi(self, new_mean, new_orientation):
         self.xi = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
@@ -77,9 +72,9 @@ class Virtual_structure():
         """Update the velocity for the structure, given the positions of the
         robots and the desired position on the trajectory."""
 
-        K = 0.2 #0.2 in paper
-        K_F = 2
-        k_1 = 2.3 #2.3 in paper
+        K = 1 #0.2 in paper
+        K_F = 0
+        k_1 = 2.1 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
         phi = 1/N * np.einsum('ij, ij ', Z_hat, Z_hat)
@@ -93,14 +88,14 @@ class Virtual_structure():
             delta_xi[2] = -np.sign(delta_xi[2])*(2*np.pi - np.abs(delta_xi[2]))
 
         #self.xi_velocity = -gamma*K*np.tanh(1/K*(delta_xi))
-        self.xi_velocity = -k_1 * K * np.tanh(1 / K * (delta_xi))
+        self.xi_velocity = -gamma * K * np.tanh(1 / K * (delta_xi))
 
-        '''z_dot_des_x = vs.xi_velocity[0] - vs.D_list*vs.xi_velocity[2]*np.sin(vs.orientation + vs.A_list)
+        z_dot_des_x = vs.xi_velocity[0] - vs.D_list*vs.xi_velocity[2]*np.sin(vs.orientation + vs.A_list)
         z_dot_des_y = vs.xi_velocity[1] + vs.D_list*vs.xi_velocity[2]*np.cos(vs.orientation + vs.A_list)
-        Z_hat_dot = (robots.velocities - np.array([z_dot_des_x, z_dot_des_y]).reshape(N, 2))'''
-        #phi_dot = 2/N * np.einsum('ij, ij', Z_hat, Z_hat_dot)
-        #self.xi_acceleration = -gamma*1/np.cosh(1/K*(delta_xi)**2)*self.xi_velocity + 2*gamma**2*K_F/N*phi_dot*K*np.tanh(1/K*delta_xi)
-        self.xi = self.xi + self.xi_velocity# + 1/2*self.xi_acceleration*(self.dt)**2
+        Z_hat_dot = (robots.velocities - np.array([z_dot_des_x, z_dot_des_y]).reshape(N, 2))
+        phi_dot = 2/N * np.einsum('ij, ij', Z_hat, Z_hat_dot)
+        self.xi_acceleration = -gamma*1/np.cosh(1/K*(delta_xi)**2)*self.xi_velocity + 2*gamma**2*K_F/N*phi_dot*K*np.tanh(1/K*delta_xi)
+        self.xi = self.xi + self.xi_velocity + 1/2*self.xi_acceleration
         self.xi_to_structure()
 
 
