@@ -67,12 +67,11 @@ class Virtual_structure():
 
         K = 2.1 #0.2 in paper
         K_F = 5
-        k_1 = 1  #2.3 in paper
+        k_1 = 1 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
         phi = 1/N * np.einsum('ij, ij ', Z_hat, Z_hat)
         gamma = 1/(K_F*phi + 1/k_1)
-
 
         delta_xi = self.xi - self.xi_desired
         if np.abs(delta_xi[2]) > np.pi:
@@ -91,7 +90,6 @@ class Virtual_structure():
             des_pos.append(self.mean + d * np.array([np.cos(a + self.orientation), np.sin(a + self.orientation)]))
         self.desired_pos = np.array(des_pos)
         self.omega = self.xi_velocity[2]
-
 
 class Robots():
 
@@ -116,13 +114,12 @@ class Robots():
         # Arclengths that the robots have to move
         s = np.linalg.norm(vs.desired_pos - self.locations)
 
-        # todo: check these formulas
         z_dot_des_x = vs.xi_velocity[0] - vs.D_list*vs.omega*np.sin(vs.orientation + vs.A_list)
         z_dot_des_y = vs.xi_velocity[1] + vs.D_list*vs.omega*np.cos(vs.orientation + vs.A_list)
         z_dot_des = np.array([z_dot_des_x, z_dot_des_y]).reshape(self.N,2)
         z_hat_dot = self.velocities - z_dot_des
 
-        u = - self.kp.dot(self.locations - vs.desired_pos) - self.kv.dot(z_hat_dot)
+        u = -self.kp.dot(self.locations - vs.desired_pos) - self.kv.dot(z_hat_dot)
         
         # make sure the acceleration is not to large
         for i in range(len(u)):
