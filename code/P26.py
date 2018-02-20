@@ -101,7 +101,7 @@ class Robots():
         self.v_max = vehicle_v_max
         self.a_max = vehicle_a_max
         self.kp=np.diag(np.ones(N)*10)
-        self.kv=np.diag(np.ones(N)*10)
+        self.kv=np.diag(np.ones(N)*15)
         self.dt=0.1
         self.colors=colors(N)
         self.all_locations=[]
@@ -349,7 +349,7 @@ while not done:
         while (t1 - t0 < 1):
             t1 = time.time()
         start = True
-    for t in range(5):
+    for t in range(10):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)
