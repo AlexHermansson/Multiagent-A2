@@ -7,6 +7,8 @@ import random
 
 
 
+
+
 class Virtual_structure():
     """"
     A class for the virtual structure with a center point in the variable mean and the orientation.
@@ -18,11 +20,15 @@ class Virtual_structure():
         self.D_list = None
         self.A_list = None
         self.orientation = None
-        self.omega = 0 # angular velocity
+        self.omega = 0 # angular velocity 
+        self.tau = 0 # angular acceleration
+        self.acceleration = np.zeros(2)
         self.xi_velocity = np.zeros(3 + 2*n_robots).reshape(-1, 1)
+        self.xi_acceleration = np.zeros(3 + 2*n_robots).reshape(-1, 1)
         self.xi = None
         self.xi_desired = None
         self.dt = 0.1
+
 
     def init_pos(self, new_mean, new_orientation):
         """ A function to update the desired positions for the robots when the mean and orientation is changed."""
@@ -36,6 +42,12 @@ class Virtual_structure():
 
     def set_des_xi(self, new_mean, new_orientation):
         self.xi_desired = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
+
+        des_pos = []
+        for d, a in zip(self.D_list, self.A_list):
+            des_pos.append(new_mean + d * np.array([np.cos(a + new_orientation), np.sin(a + new_orientation)]))
+        self.desired_pos = np.array(des_pos)
+
 
     def init_xi(self, new_mean, new_orientation):
         self.xi = np.array([new_mean[0], new_mean[1], new_orientation] + [d for d in self.D_list] + [a for a in self.A_list])
@@ -65,21 +77,30 @@ class Virtual_structure():
         """Update the velocity for the structure, given the positions of the
         robots and the desired position on the trajectory."""
 
-        K = 2.1 #0.2 in paper
-        K_F = 5
-        k_1 = 1  #2.3 in paper
+        K = 0.2 #0.2 in paper
+        K_F = 2
+        k_1 = 2.3 #2.3 in paper
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
         phi = 1/N * np.einsum('ij, ij ', Z_hat, Z_hat)
         gamma = 1/(K_F*phi + 1/k_1)
 
+        # todo: this won't work? phi is now fixed at least (I think)
 
         delta_xi = self.xi - self.xi_desired
+        old_xi_velocity = self.xi_velocity
         if np.abs(delta_xi[2]) > np.pi:
             delta_xi[2] = -np.sign(delta_xi[2])*(2*np.pi - np.abs(delta_xi[2]))
 
-        self.xi_velocity = -gamma*K*np.tanh(1/K*(delta_xi))
-        self.xi = self.xi + self.xi_velocity
+        #self.xi_velocity = -gamma*K*np.tanh(1/K*(delta_xi))
+        self.xi_velocity = -k_1 * K * np.tanh(1 / K * (delta_xi))
+
+        '''z_dot_des_x = vs.xi_velocity[0] - vs.D_list*vs.xi_velocity[2]*np.sin(vs.orientation + vs.A_list)
+        z_dot_des_y = vs.xi_velocity[1] + vs.D_list*vs.xi_velocity[2]*np.cos(vs.orientation + vs.A_list)
+        Z_hat_dot = (robots.velocities - np.array([z_dot_des_x, z_dot_des_y]).reshape(N, 2))'''
+        #phi_dot = 2/N * np.einsum('ij, ij', Z_hat, Z_hat_dot)
+        #self.xi_acceleration = -gamma*1/np.cosh(1/K*(delta_xi)**2)*self.xi_velocity + 2*gamma**2*K_F/N*phi_dot*K*np.tanh(1/K*delta_xi)
+        self.xi = self.xi + self.xi_velocity# + 1/2*self.xi_acceleration*(self.dt)**2
         self.xi_to_structure()
 
 
@@ -91,18 +112,20 @@ class Virtual_structure():
             des_pos.append(self.mean + d * np.array([np.cos(a + self.orientation), np.sin(a + self.orientation)]))
         self.desired_pos = np.array(des_pos)
         self.omega = self.xi_velocity[2]
+        #self.acceleration = self.xi_acceleration[0:2]
+        #self.tau = self.xi_acceleration[2]
 
 
 class Robots():
 
 
-    def __init__(self, locations, N=7):
+    def __init__(self, locations,N=7):
         self.locations = locations
         self.N=N
         self.velocities = np.zeros(2*N).reshape(N, 2) # if N robots, we need N velocities
         self.v_max = vehicle_v_max
         self.a_max = vehicle_a_max
-        self.kp=np.diag(np.ones(N)*10)
+        self.kp=np.diag(np.ones(N)*15)
         self.kv=np.diag(np.ones(N)*10)
         self.dt=0.1
         self.colors=colors(N)
@@ -122,12 +145,22 @@ class Robots():
         z_dot_des = np.array([z_dot_des_x, z_dot_des_y]).reshape(self.N,2)
         z_hat_dot = self.velocities - z_dot_des
 
+        # location or acceleration? todo: check that it works
+        #u = vs.desired_pos - self.kp.dot(self.locations - vs.desired_pos) - self.kv.dot(z_hat_dot)
+        x_acc = vs.acceleration[0] - vs.D_list*vs.omega**2*np.cos(vs.orientation + vs.A_list) - vs.D_list*vs.tau*np.sin(vs.orientation + vs.A_list)
+        y_acc = vs.acceleration[1] - vs.D_list*vs.omega**2*np.sin(vs.orientation + vs.A_list) + vs.D_list*vs.tau*np.cos(vs.orientation + vs.A_list)
+        z_acc = np.array([x_acc, y_acc])
+        #u = z_acc.T - self.kp.dot(self.locations - vs.desired_pos) - self.kv.dot(z_hat_dot)
         u = - self.kp.dot(self.locations - vs.desired_pos) - self.kv.dot(z_hat_dot)
-        
         # make sure the acceleration is not to large
+        u_idx = np.linalg.norm(u, axis=1) > self.a_max
+
+
+
         for i in range(len(u)):
             if np.linalg.norm(u[i]) >self.a_max:
                 u[i] = (u[i]*self.a_max)/np.linalg.norm(u[i])
+            #u = (u*self.a_max)/np.linalg.norm(u)
 
         return u
 
@@ -148,7 +181,7 @@ class Robots():
         for i in range(len(new_vel)):
             if np.linalg.norm(new_vel[i]) > self.v_max:
                 new_vel[i] = (new_vel[i]*self.v_max) / np.linalg.norm(new_vel[i])
-
+            #new_vel = (new_vel*self.v_max) / np.linalg.norm(new_vel)
         self.velocities = new_vel
 
 
@@ -279,6 +312,8 @@ while not done:
     for t in range(10):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
+                #vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
+                #vs.update_structure(robots.locations)
                 robots.move(vs)
             else:
                 init_pos=True
@@ -286,15 +321,20 @@ while not done:
                 robots.start=True
         else:
             vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
+            #vs.init_pos(traj_pos[time_step],traj_theta[time_step])
             vs.update_structure(robots.locations)
             robots.move(vs)
             if time_step + 1 < len(traj_t):
-                time_step += 1
-                total_time += 1
+                time_step+=1
+                total_time+=1
 
-            elif not np.isclose(vs.mean, traj_pos[time_step], 1e-2, 1e-3).all():
-                total_time += 1
+            #if (np.isclose(traj_pos[time_step], vs.mean,1e-2,1e-3).all()):
+            '''if np.linalg.norm(traj_pos[time_step]-vs.mean)<1:
+                if time_step+1<len(traj_t):
+                    time_step += 1
 
+            if time_step + 1 < len(traj_t):
+                total_time+=1'''
 
 
     set_bg()
