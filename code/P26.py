@@ -101,10 +101,9 @@ class Robots():
         self.v_max = vehicle_v_max
         self.a_max = vehicle_a_max
         self.kp=np.diag(np.ones(N)*10)
-        self.kv=np.diag(np.ones(N)*15)
+        self.kv=np.diag(np.ones(N)*10)
         self.dt=0.1
         self.colors=colors(N)
-        self.all_locations=[]
         self.start=False
 
 
@@ -134,10 +133,6 @@ class Robots():
         u = self.control(vs)
 
         self.locations = 1/2*u*(self.dt)**2 + self.velocities*self.dt + self.locations
-        if self.start is True:
-            self.all_locations.append(self.locations)
-            if len(self.all_locations)>500:
-                self.all_locations.pop(0)
 
 
         new_vel = u*self.dt + self.velocities
@@ -245,25 +240,25 @@ def colors(n):
 def set_bg(cr7):
     '''set initial and final position'''
     screen.fill((255, 255, 255))
+    pg.draw.polygon(screen, (0, 255, 0), pg_bounding_polygon, 0)
     for i in range(len(robots.locations)):
         pg_pos = to_pygame(robots.locations[i])
-        pg.draw.circle(screen, robots.colors[i], (pg_pos[0], pg_pos[1]), 3, 0)
-        if len(robots.all_locations)>1:
-            for p in range(1,len(robots.all_locations)):
-                pg.draw.line(screen,robots.colors[i],to_pygame(robots.all_locations[p-1][i]),to_pygame(robots.all_locations[p][i]))
-    for i in range(1,len(traj_pos)):
-        pg.draw.line(screen,(0,0,0),to_pygame(traj_pos[i-1]),to_pygame(traj_pos[i]))
-    pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
-    for pos in vs.desired_pos:
+        pg.draw.circle(screen, (0,0,255), (pg_pos[0], pg_pos[1]), 5, 0)
+    '''for i in range(1,len(traj_pos)):
+        pg.draw.line(screen,(0,0,0),to_pygame(traj_pos[i-1]),to_pygame(traj_pos[i]))'''
+    '''for pos in vs.desired_pos:
         pg_pos = to_pygame(pos)
-        pg.draw.circle(screen, (0, 0, 255), (pg_pos[0], pg_pos[1]), 3, 1)
-    pg_mean=to_pygame(vs.mean)
-    pg.draw.circle(screen, (0, 0, 0), pg_mean, 3, 0)
-    pg.draw.circle(screen, (0,0,0), to_pygame(cr7),5,0)
-    for x in xg:
-        pg.draw.line(screen, (0, 0, 0), to_pygame([x,ys]), to_pygame([x,YB]))
+        pg.draw.circle(screen, (0, 0, 255), (pg_pos[0], pg_pos[1]), 3, 1)'''
+    #pg_mean=to_pygame(vs.mean)
+    #pg.draw.circle(screen, (0, 0, 0), pg_mean, 3, 0)
+    pg.draw.circle(screen, (255,0,0), to_pygame(cr7),5,0)
+    '''for x in xg:
+        pg.draw.line(screen, (255, 255, 255), to_pygame([x,ys]), to_pygame([x,YB]))
     for y in yg:
-        pg.draw.line(screen, (0, 0, 0), to_pygame([xs,y]), to_pygame([XB,y]))
+        pg.draw.line(screen, (255, 255, 255), to_pygame([xs,y]), to_pygame([XB,y]))'''
+    pg.draw.line(screen,(255, 255, 255),to_pygame([xs,(ys+YB/2)]),to_pygame([XB,(ys+YB/2)]))
+    pg.draw.circle(screen,(255,255,255),to_pygame([(xs+XB)/2,(ys+YB/2)]),50,1)
+    pg.draw.circle(screen, (255, 255, 255), to_pygame([(xs + XB) / 2, (ys + YB / 2)]), 3, 0)
 
 
 def set_data(time,index):
@@ -383,7 +378,7 @@ while not done:
 
 
     set_bg(CR7)
-    set_data(total_time*0.1,robot_index)
+    #set_data(total_time*0.1,robot_index)
     pg.display.flip()
 
 
