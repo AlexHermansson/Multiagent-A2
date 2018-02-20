@@ -4,6 +4,7 @@ import json
 import pygame as pg
 import time
 import random
+import shapely.geometry
 
 
 
@@ -176,7 +177,7 @@ def grid_check(CR_pos):
 	CR_x, CR_y = CR_pos
 
 	if CR_x < xg[0] and CR_y > yg[1]:
-		return None
+		return 1
 
 	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[1]:
 		return 4
@@ -185,7 +186,7 @@ def grid_check(CR_pos):
 		return 7
 
 	elif CR_x > xg[2] and CR_y > yg[1]:
-		return None
+		return 9
 
 	elif CR_x < xg[0] and CR_y > yg[0] and CR_y < yg[1]:
 		return 1
@@ -241,6 +242,9 @@ def set_bg(cr7):
     '''set initial and final position'''
     screen.fill((255, 255, 255))
     pg.draw.polygon(screen, (0, 255, 0), pg_bounding_polygon, 0)
+    pg.draw.line(screen, (255, 255, 255), to_pygame([xs, (ys + YB / 2)]), to_pygame([XB, (ys + YB / 2)]))
+    pg.draw.circle(screen, (255, 255, 255), to_pygame([(xs + XB) / 2, (ys + YB / 2)]), 50, 1)
+    pg.draw.circle(screen, (255, 255, 255), to_pygame([(xs + XB) / 2, (ys + YB / 2)]), 3, 0)
     for i in range(len(robots.locations)):
         pg_pos = to_pygame(robots.locations[i])
         pg.draw.circle(screen, (0,0,255), (pg_pos[0], pg_pos[1]), 5, 0)
@@ -256,9 +260,6 @@ def set_bg(cr7):
         pg.draw.line(screen, (255, 255, 255), to_pygame([x,ys]), to_pygame([x,YB]))
     for y in yg:
         pg.draw.line(screen, (255, 255, 255), to_pygame([xs,y]), to_pygame([XB,y]))'''
-    pg.draw.line(screen,(255, 255, 255),to_pygame([xs,(ys+YB/2)]),to_pygame([XB,(ys+YB/2)]))
-    pg.draw.circle(screen,(255,255,255),to_pygame([(xs+XB)/2,(ys+YB/2)]),50,1)
-    pg.draw.circle(screen, (255, 255, 255), to_pygame([(xs + XB) / 2, (ys + YB / 2)]), 3, 0)
 
 
 def set_data(time,index):
@@ -311,6 +312,8 @@ traj_x=traj["x"]
 traj_y=traj["y"]
 traj_pos=np.array(list(zip(traj_x,traj_y)))
 
+sh_bounding_polygon=shapely.geometry.Polygon(bounding_polygon)
+
 xg, yg,xs,XB,ys,YB = create_grid()
 
 # Plot the bounding polygon
@@ -333,6 +336,7 @@ init_pos=False
 time_step=0
 total_time=0
 robot_index=10000
+check_points=False
 
 while not done:
     for event in pg.event.get():
@@ -353,22 +357,14 @@ while not done:
                 time_step+=1
                 robots.start=True
         else:
-            '''vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
-            vs.update_structure(robots.locations)
-            robots.move(vs)
 
-            if (np.isclose(traj_pos[time_step], vs.mean,1e-2,1e-3).all()):
-                if time_step+1<len(traj_t):
-                    time_step += 1
-
-            if time_step + 1 < len(traj_t):
-                total_time+=1
-            '''
             CR7=traj_pos[time_step]
             robot_index=grid_check(CR7)
-            z_des = vs.xi[0:2] + (CR7 - robots.locations[robot_index])
+
+
+            mean_des = vs.xi[0:2] + (CR7 - robots.locations[robot_index])
             #vs.set_des_pos(z_des,np.pi/2)
-            vs.set_des_xi(z_des, np.pi/2)
+            vs.set_des_xi(mean_des, np.pi/2)
             vs.update_structure(robots.locations)
             robots.move(vs)
 
