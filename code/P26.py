@@ -24,6 +24,10 @@ class Virtual_structure():
         self.xi = None
         self.xi_desired = None
         self.dt = 0.1
+        self.right_dist = None
+        self.left_dist = None
+        self.upper_dist = None
+        self.bottom_dist = None
 
     def init_pos(self, new_mean, new_orientation):
         """ A function to update the desired positions for the robots when the mean and orientation is changed."""
@@ -61,6 +65,30 @@ class Virtual_structure():
         self.D_list = np.array(dist_list)
         self.A_list = np.array(angle_list)
 
+        # Find the furthest distance in x and y direction from the center (mean_x, mean_y)
+        right_dist = 0
+        left_dist = 0
+        upper_dist = 0
+        bottom_dist = 0
+        for point in formation:
+
+            if mean_x - point[0] > left_dist:
+                left_dist = mean_x - point[0]
+
+            if mean_x - point[0] < right_dist:
+                right_dist = mean_x - point[0]
+
+            if mean_y - point[1] > bottom_dist:
+                bottom_dist = mean_y - point[1]
+
+            if mean_y - point[1] < upper_dist:
+                upper_dist = mean_y - point[1]
+
+        self.right_dist = np.abs(right_dist)
+        self.left_dist = np.abs(left_dist)
+        self.upper_dist = np.abs(upper_dist)
+        self.bottom_dist = np.abs(bottom_dist)
+
 
     def update_structure(self, robot_positions):
         """Update the velocity for the structure, given the positions of the
@@ -79,6 +107,14 @@ class Virtual_structure():
             delta_xi[2] = -np.sign(delta_xi[2])*(2*np.pi - np.abs(delta_xi[2]))
 
         self.xi_velocity = -gamma*K*np.tanh(1/K*(delta_xi))
+
+        xi_new_mean = self.xi[0:2] + self.xi_velocity[0:2]
+        if xi_new_mean[0] + self.right_dist > XB or xi_new_mean[0] - self.left_dist < xs:
+            self.xi_velocity[0] = 0
+
+        if xi_new_mean[1] + self.upper_dist > YB or xi_new_mean[1] - self.bottom_dist < ys:
+            self.xi_velocity[1] = 0
+
         self.xi = self.xi + self.xi_velocity
         self.xi_to_structure()
 
