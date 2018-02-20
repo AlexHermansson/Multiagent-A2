@@ -65,9 +65,11 @@ class Virtual_structure():
         """Update the velocity for the structure, given the positions of the
         robots and the desired position on the trajectory."""
 
-        K = 2.1 #0.2 in paper
+
+        K = 1 #0.2 in paper
         K_F = 5
-        k_1 = 1 #2.3 in paper
+        k_1 = 2.1#2.3 in paper
+
         N = robot_positions.shape[0]
         Z_hat = robot_positions - self.desired_pos
         phi = 1/N * np.einsum('ij, ij ', Z_hat, Z_hat)
@@ -77,7 +79,7 @@ class Virtual_structure():
         if np.abs(delta_xi[2]) > np.pi:
             delta_xi[2] = -np.sign(delta_xi[2])*(2*np.pi - np.abs(delta_xi[2]))
 
-        self.xi_velocity = -gamma*K*np.tanh(1/K*(delta_xi))
+        self.xi_velocity = -gamma * K * np.tanh(1 / K * (delta_xi))
         self.xi = self.xi + self.xi_velocity
         self.xi_to_structure()
 
@@ -282,6 +284,7 @@ while not done:
                 time_step+=1
                 robots.start=True
         else:
+
             vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
             vs.update_structure(robots.locations)
             robots.move(vs)
