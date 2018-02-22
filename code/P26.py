@@ -284,18 +284,18 @@ def set_bg(cr7):
     for i in range(len(robots.locations)):
         pg_pos = to_pygame(robots.locations[i])
         pg.draw.circle(screen, (0,0,255), (pg_pos[0], pg_pos[1]), 5, 0)
-    '''for i in range(1,len(traj_pos)):
-        pg.draw.line(screen,(0,0,0),to_pygame(traj_pos[i-1]),to_pygame(traj_pos[i]))'''
+    for i in range(1,len(traj_pos)):
+        pg.draw.line(screen,(0,0,0),to_pygame(traj_pos[i-1]),to_pygame(traj_pos[i]))
     '''for pos in vs.desired_pos:
         pg_pos = to_pygame(pos)
         pg.draw.circle(screen, (0, 0, 255), (pg_pos[0], pg_pos[1]), 3, 1)'''
     #pg_mean=to_pygame(vs.mean)
     #pg.draw.circle(screen, (0, 0, 0), pg_mean, 3, 0)
     pg.draw.circle(screen, (255,0,0), to_pygame(cr7),5,0)
-    '''for x in xg:
-        pg.draw.line(screen, (255, 255, 255), to_pygame([x,ys]), to_pygame([x,YB]))
+    for x in xg:
+        pg.draw.line(screen, (0, 0, 0), to_pygame([x,ys]), to_pygame([x,YB]))
     for y in yg:
-        pg.draw.line(screen, (255, 255, 255), to_pygame([xs,y]), to_pygame([XB,y]))'''
+        pg.draw.line(screen, (0, 0, 0), to_pygame([xs,y]), to_pygame([XB,y]))
 
 
 def set_data(time,index):
@@ -384,7 +384,7 @@ while not done:
         while (t1 - t0 < 1):
             t1 = time.time()
         start = True
-    for t in range(10):
+    for t in range(20):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)

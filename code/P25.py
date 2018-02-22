@@ -42,8 +42,10 @@ class Virtual_structure():
 
     def set_formation(self, formation):
         """Creates the form of the virtual structure."""
-        mean_x = np.mean(formation[:, 0])
-        mean_y = np.mean(formation[:, 1])
+        #mean_x = np.mean(formation[:, 0])
+        #mean_y = np.mean(formation[:, 1])
+        mean_x=formation[0,0]
+        mean_y=formation[0,1]
         mean = np.array([mean_x, mean_y])
         dist_list = []
         angle_list = []
@@ -284,9 +286,10 @@ while not done:
                 time_step+=1
                 robots.start=True
         else:
-
+            
             vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
             vs.update_structure(robots.locations)
+            #vs.init_pos(traj_pos[time_step],traj_theta[time_step])
             robots.move(vs)
             if time_step + 1 < len(traj_t):
                 time_step += 1
