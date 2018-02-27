@@ -4,6 +4,83 @@ import pygame as pg
 import time
 import random
 import itertools
+from shapely import geometry
+
+
+class Robot():
+
+    def __init__(self, position, v_preferred, v_max, index, tau = 2):
+        self.p = position
+        self.v = np.zeros(0)
+        self.v_opt = np.zeros(0)
+        self.v_preferred = v_preferred
+        self.v_max = v_max
+        self.index = index # might not be necessary
+        self.radius = 0.5
+        self.tau = tau
+
+    def move(self, v_new):
+        """Update position"""
+
+        pass
+
+    def select_vel(self):
+        """linear programming stuff"""
+        ORCA = self.compute_ORCA()
+        pass
+
+    def compute_ORCA(self, robots):
+
+        """ORCA is defined by u """
+        ORCA = np.zeros((N-1, 2))
+        for robot in robots:
+            if not robot.index == self.index:
+                u = self.compute_u(robot)
+                ORCA[robot] = u
+
+        return ORCA
+
+    def compute_u(self, robot):
+
+        VO = self.create_VO(robot)
+        v_opt_rel = self.v_opt - robot.v_opt
+
+        if geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel)):
+            x_1 = VO['C']; x_2 = VO['D'];
+            u_1 = np.dot(x_1, v_opt_rel)/(np.dot(x_1, x_1))*x_1 - v_opt_rel
+            u_2 = np.dot(x_2, v_opt_rel)/(np.dot(x_2, x_2))*x_2 - v_opt_rel
+
+            return u_1 if np.linalg.norm(u_1) < np.linalg.norm(u_2) else u_2
+
+        elif geometry.Point(VO['center']).buffer(VO['r']).contains(geometry.Point(v_opt_rel)):
+            center = VO['center']; r = VO['radius']
+            a = (center - v_opt_rel)*r/np.linalg.norm(center - v_opt_rel)
+
+            return a - v_opt_rel
+
+        return None
+
+    def create_VO(self, robot):
+        """Creating the velocity obstacle"""
+
+        center = (robot.p - self.p)/self.tau
+        r = (self.radius + robot.radius)/self.tau
+        sh_circle = geometry.Point(center).buffer(r)
+
+        d = np.linalg.norm(center)
+        theta = np.arccos(r / d)
+        phi = np.arctan2(center[1], center[0])
+        A_x = r * np.cos(np.pi + theta + phi)
+        A_y = r * np.sin(np.pi + theta + phi)
+        A = center + np.array([A_x, A_y])
+        B_x = r * np.cos(np.pi - theta + phi)
+        B_y = r * np.sin(np.pi - theta + phi)
+        B = center + np.array([B_x, B_y])
+        C = B / np.linalg.norm(B) * 3 * self.v_max  # 2 v_max is as large as it gets, but we want a margin. See drawing.
+        D = A / np.linalg.norm(A) * 3 * self.v_max
+
+        return {'center':center, 'radius':r, 'A':A, 'B':B, 'C':C, 'D':D} # C and D are the furthest points in the polygon
+
 
 def colors(n):
     col=list(itertools.permutations([255,0,100,225],3))
