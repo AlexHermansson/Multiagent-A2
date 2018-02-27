@@ -47,14 +47,14 @@ def set_bg():
     pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
     '''set start and goal positions'''
     for agent in range(len(goal_positions)):
-        pg.draw.circle(screen,agents_colors[agent],to_pygame(start_positions[agent]),5,0)
-        pg.draw.circle(screen, agents_colors[agent], to_pygame(goal_positions[agent]),5, 1)
+        pg.draw.circle(screen,agents_colors[agent],to_pygame(start_positions[agent]),7,0)
+        pg.draw.circle(screen, agents_colors[agent], to_pygame(goal_positions[agent]),7, 1)
 
 
 
 def to_pygame(coords):
     '''Convert coordinates into pygame coordinates'''
-    return (int(coords[0] * 15 + width / 2 - 150), int(coords[1] * -15 + height / 2 + 200))
+    return (int(coords[0] * 14 + width / 2 - 150), int(coords[1] * -14 + height / 2 + 200))
 
 # PyGame parameters
 pg.init()
