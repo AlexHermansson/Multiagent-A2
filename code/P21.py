@@ -36,22 +36,27 @@ class Robot():
         if ORCA:
             objective = lambda v: np.linalg.norm(v - self.v_pref)
 
-            constraint1 = lambda v, u: np.dot(v - (self.v_opt + 1/2 * u), u/np.linalg.norm(u))
+            constraint1 = lambda v, u,n: np.dot(v - (self.v_opt + 1/2 * u),n)
             constraint2 = lambda v: self.v_max - np.linalg.norm(v)
 
 
             constraints = ({'type':'ineq', 'fun':constraint2},)
-            for u in ORCA:
-                constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,)},)
+            for u_t in ORCA:
+                u=u_t[0]
+                n=u_t[1]
+                constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,n)},)
 
             v_guess = np.zeros(2)
-            res =  minimize(objective, v_guess, method='SLSQP', constraints=constraints, tol=1e-15)
+            try:
+                res =  minimize(objective, v_guess, method='SLSQP', constraints=constraints, tol=1e-15)
+            except:
+                a=0
             if np.linalg.norm(res.x)> self.v_max:
                 a = 0
             if res.success:
                 self.v = res.x
             else:
-                self.v = -self.v_opt
+                self.v = np.zeros(2)
 
         else:
 
@@ -64,8 +69,9 @@ class Robot():
         ORCA = []
         for robot in robots:
             if robot.index != self.index:
-                u = self.compute_u(robot)
-                if u.size > 0:
+                if np.linalg.norm(self.p-robot.p)<4:
+                    u = self.compute_u(robot)
+                    #if u.size > 0:
                     ORCA.append(u)
 
         return ORCA
@@ -74,34 +80,41 @@ class Robot():
 
         VO = self.create_VO(robot)
         v_opt_rel = self.v_opt - robot.v_opt
+        try:
+            if geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel)):
+                x_1 = VO['C']
+                x_2 = VO['D']
+                u_1 = np.dot(x_1, v_opt_rel)/(np.dot(x_1, x_1))*x_1 - v_opt_rel
+                u_2 = np.dot(x_2, v_opt_rel)/(np.dot(x_2, x_2))*x_2 - v_opt_rel
 
-        if geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel)):
-            x_1 = VO['C']
-            x_2 = VO['D']
-            u_1 = np.dot(x_1, v_opt_rel)/(np.dot(x_1, x_1))*x_1 - v_opt_rel
-            u_2 = np.dot(x_2, v_opt_rel)/(np.dot(x_2, x_2))*x_2 - v_opt_rel
+                return (u_1, u_1/np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(u_2) else (u_2, u_2/np.linalg.norm(u_2))
 
-            return u_1 if np.linalg.norm(u_1) < np.linalg.norm(u_2) else u_2
+            elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
+                center = VO['center']
+                r = VO['radius']
+                a = (v_opt_rel - center)*r/np.linalg.norm( v_opt_rel- center)
+                u= a-v_opt_rel
+                return (u, u/np.linalg.norm(u))
 
-        elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
-            center = VO['center']
-            r = VO['radius']
-            a = (v_opt_rel - center)*r/np.linalg.norm( v_opt_rel- center)
-
-            return a - v_opt_rel
-
-        else:
-            d1=geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).distance(geometry.Point(v_opt_rel))
-            d2=geometry.Point(VO['center']).buffer(VO['radius']).distance(geometry.Point(v_opt_rel))
-            if d2 < d1:
-                u=(VO['center']-v_opt_rel)/np.linalg.norm(VO['center']-v_opt_rel)*d2
-                return u
             else:
-                lines=geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).boundary
-                a=0
+                d1=geometry.LineString([VO['A'], VO['D']]).distance(geometry.Point(v_opt_rel))
+                d2=geometry.Point(VO['center']).buffer(VO['radius']).distance(geometry.Point(v_opt_rel))
+                d3= geometry.LineString([VO['B'], VO['C']]).distance(geometry.Point(v_opt_rel))
+                if d2 < d1:
+                    u=(VO['center']-v_opt_rel)/np.linalg.norm(VO['center']-v_opt_rel)*d2
+                    return (u, -u/np.linalg.norm(u))
+                else:
+                    x_1 = VO['C']
+                    x_2 = VO['D']
+                    u_1 = np.dot(x_1, v_opt_rel) / (np.dot(x_1, x_1)) * x_1 - v_opt_rel
+                    u_2 = np.dot(x_2, v_opt_rel) / (np.dot(x_2, x_2)) * x_2 - v_opt_rel
+                    return (u_1, -u_1 / np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(
+                        u_2) else u_2, (-u_2 / np.linalg.norm(u_2))
+        except:
+            a=0
 
 
-        return np.array([])
+        #return np.array([])
 
     def create_VO(self, robot):
         """Creating the velocity obstacle"""
@@ -247,10 +260,10 @@ while not done:
 
     for robot in robots:
         robot.select_vel(robots)
-        robot.move()
+        #robot.move()
 
-    '''for robot in robots:
-        robot.move()'''
+    for robot in robots:
+        robot.move()
 
 
     set_bg()
