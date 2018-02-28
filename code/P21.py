@@ -40,14 +40,18 @@ class Robot():
             constraint2 = lambda v: self.v_max - np.linalg.norm(v)
 
 
-            constraints = ({'type':'ineq', 'fun':constraint2})
+            constraints = ({'type':'ineq', 'fun':constraint2},)
             for u in ORCA:
-                constraints += ({'type':'ineq', 'fun':constraint1, 'args':u},)
+                constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,)},)
 
             v_guess = np.zeros(2)
-            res =  minimize(objective, v_guess, constraints=constraints)
-
-            self.v = res['x']
+            res =  minimize(objective, v_guess, method='SLSQP', constraints=constraints, tol=1e-15)
+            if np.linalg.norm(res.x)> self.v_max:
+                a = 0
+            if res.success:
+                self.v = res.x
+            else:
+                self.v = -self.v_opt
 
         else:
 
@@ -59,9 +63,9 @@ class Robot():
         """ORCA is defined by u. Returns an array with all u's as rows."""
         ORCA = []
         for robot in robots:
-            if not robot.index == self.index:
+            if robot.index != self.index:
                 u = self.compute_u(robot)
-                if u:
+                if u.size > 0:
                     ORCA.append(u)
 
         return ORCA
@@ -72,19 +76,32 @@ class Robot():
         v_opt_rel = self.v_opt - robot.v_opt
 
         if geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel)):
-            x_1 = VO['C']; x_2 = VO['D'];
+            x_1 = VO['C']
+            x_2 = VO['D']
             u_1 = np.dot(x_1, v_opt_rel)/(np.dot(x_1, x_1))*x_1 - v_opt_rel
             u_2 = np.dot(x_2, v_opt_rel)/(np.dot(x_2, x_2))*x_2 - v_opt_rel
 
             return u_1 if np.linalg.norm(u_1) < np.linalg.norm(u_2) else u_2
 
         elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
-            center = VO['center']; r = VO['radius']
-            a = (center - v_opt_rel)*r/np.linalg.norm(center - v_opt_rel)
+            center = VO['center']
+            r = VO['radius']
+            a = (v_opt_rel - center)*r/np.linalg.norm( v_opt_rel- center)
 
             return a - v_opt_rel
 
-        return None
+        else:
+            d1=geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).distance(geometry.Point(v_opt_rel))
+            d2=geometry.Point(VO['center']).buffer(VO['radius']).distance(geometry.Point(v_opt_rel))
+            if d2 < d1:
+                u=(VO['center']-v_opt_rel)/np.linalg.norm(VO['center']-v_opt_rel)*d2
+                return u
+            else:
+                lines=geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).boundary
+                a=0
+
+
+        return np.array([])
 
     def create_VO(self, robot):
         """Creating the velocity obstacle"""
@@ -94,6 +111,8 @@ class Robot():
         sh_circle = geometry.Point(center).buffer(r)
 
         d = np.linalg.norm(center)
+        if np.abs(r/d)>1:
+            a=0
         theta = np.arccos(r / d)
         phi = np.arctan2(center[1], center[0])
         A_x = r * np.cos(np.pi + theta + phi)
@@ -228,9 +247,10 @@ while not done:
 
     for robot in robots:
         robot.select_vel(robots)
-
-    for robot in robots:
         robot.move()
+
+    '''for robot in robots:
+        robot.move()'''
 
 
     set_bg()
