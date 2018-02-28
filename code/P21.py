@@ -32,6 +32,7 @@ class Robot():
     def compute_ORCA(self, robots):
 
         """ORCA is defined by u """
+        N=np.size(robots)
         ORCA = np.zeros((N-1, 2))
         for robot in robots:
             if not robot.index == self.index:
@@ -176,6 +177,7 @@ set_bg()
 pg.display.flip()
 start = False
 done = False
+
 
 while not done:
     for event in pg.event.get():
