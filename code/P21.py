@@ -24,9 +24,9 @@ class Robot():
 
         pass
 
-    def select_vel(self):
+    def select_vel(self, robots):
         """linear programming stuff"""
-        ORCA = self.compute_ORCA()
+        ORCA = self.compute_ORCA(robots)
         pass
 
     def compute_ORCA(self, robots):
