@@ -4,34 +4,55 @@ import pygame as pg
 import time
 import random
 import itertools
+from scipy.optimize import minimize
 from shapely import geometry
 
 
 class Robot():
 
-    def __init__(self, position, v_preferred, v_max, index, tau = 2):
+    def __init__(self, position, goal_position, v_max, index, tau = 2):
         self.p = position
+        self.p_goal = goal_position
         self.v = np.zeros(0)
-        self.v_opt = np.zeros(0)
-        self.v_preferred = v_preferred
+        self.v_opt = None
+        self.v_pref = None
         self.v_max = v_max
         self.index = index # might not be necessary
         self.radius = 0.5
         self.tau = tau
+        self.dt = 0.1
 
-    def move(self, v_new):
+
+    def move(self, robots):
         """Update position"""
 
-        pass
+        v = self.select_vel(robots)
+        self.p += self.dt*v
 
     def select_vel(self, robots):
         """linear programming stuff"""
         ORCA = self.compute_ORCA(robots)
-        pass
+
+        objective = lambda v: np.linalg.norm(v - self.v_pref)
+
+        constraint1 = lambda v, u: np.dot(v - (self.v_opt + 1/2 * u), u/np.linalg.norm(u))
+        constraint2 = lambda v: self.v_max - np.linalg.norm(v)
+
+
+        constraints = ({'type':'ineq', 'fun':constraint2})
+        for u in ORCA:
+            constraints += ({'type':'ineq', 'fun':constraint1, 'args':u},)
+
+        v_guess = np.zeros(2)
+        res =  minimize(objective, v_guess, constraints=constraints)
+        v = res['x']
+
+        a = 0
+
+        return v
 
     def compute_ORCA(self, robots):
-
-        """ORCA is defined by u """
+        """ORCA is defined by u. Returns an array with all u's as rows."""
         N=np.size(robots)
         ORCA = np.zeros((N-1, 2))
         for robot in robots:
@@ -172,6 +193,11 @@ pg_bounding_polygon=list_to_pygame(bounding_polygon)
 agents_colors=colors(len(start_positions))
 
 '''Initialization'''
+robots = []
+for i in range(len(start_positions)):
+    robot = Robot(start_positions[i], goal_positions[i], vehicle_v_max, i)
+    robots.append(robot)
+
 time_step=0
 set_bg()
 pg.display.flip()
