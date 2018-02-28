@@ -13,52 +13,56 @@ class Robot():
     def __init__(self, position, goal_position, v_max, index, tau = 2):
         self.p = position
         self.p_goal = goal_position
-        self.v = np.zeros(0)
-        self.v_opt = None
-        self.v_pref = None
+        self.v = np.zeros(2)
+        self.v_opt = self.v
         self.v_max = v_max
         self.index = index # might not be necessary
         self.radius = 0.5
         self.tau = tau
         self.dt = 0.1
+        self.v_pref=None
+        self.set_v_pref()
 
 
-    def move(self, robots):
+    def move(self):
         """Update position"""
-
-        v = self.select_vel(robots)
-        self.p += self.dt*v
+        self.p += self.dt*self.v
+        self.v_opt=self.v
+        self.set_v_pref()
 
     def select_vel(self, robots):
         """linear programming stuff"""
         ORCA = self.compute_ORCA(robots)
+        if ORCA:
+            objective = lambda v: np.linalg.norm(v - self.v_pref)
 
-        objective = lambda v: np.linalg.norm(v - self.v_pref)
-
-        constraint1 = lambda v, u: np.dot(v - (self.v_opt + 1/2 * u), u/np.linalg.norm(u))
-        constraint2 = lambda v: self.v_max - np.linalg.norm(v)
+            constraint1 = lambda v, u: np.dot(v - (self.v_opt + 1/2 * u), u/np.linalg.norm(u))
+            constraint2 = lambda v: self.v_max - np.linalg.norm(v)
 
 
-        constraints = ({'type':'ineq', 'fun':constraint2})
-        for u in ORCA:
-            constraints += ({'type':'ineq', 'fun':constraint1, 'args':u},)
+            constraints = ({'type':'ineq', 'fun':constraint2})
+            for u in ORCA:
+                constraints += ({'type':'ineq', 'fun':constraint1, 'args':u},)
 
-        v_guess = np.zeros(2)
-        res =  minimize(objective, v_guess, constraints=constraints)
-        v = res['x']
+            v_guess = np.zeros(2)
+            res =  minimize(objective, v_guess, constraints=constraints)
 
-        a = 0
+            self.v = res['x']
 
-        return v
+        else:
+
+            self.v=self.v_pref
+
+
 
     def compute_ORCA(self, robots):
         """ORCA is defined by u. Returns an array with all u's as rows."""
-        N=np.size(robots)
-        ORCA = np.zeros((N-1, 2))
+        ORCA = []
         for robot in robots:
             if not robot.index == self.index:
                 u = self.compute_u(robot)
-                ORCA[robot] = u
+                if u:
+                    ORCA.append(u)
 
         return ORCA
 
@@ -74,7 +78,7 @@ class Robot():
 
             return u_1 if np.linalg.norm(u_1) < np.linalg.norm(u_2) else u_2
 
-        elif geometry.Point(VO['center']).buffer(VO['r']).contains(geometry.Point(v_opt_rel)):
+        elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
             center = VO['center']; r = VO['radius']
             a = (center - v_opt_rel)*r/np.linalg.norm(center - v_opt_rel)
 
@@ -102,6 +106,12 @@ class Robot():
         D = A / np.linalg.norm(A) * 3 * self.v_max
 
         return {'center':center, 'radius':r, 'A':A, 'B':B, 'C':C, 'D':D} # C and D are the furthest points in the polygon
+
+    def set_v_pref(self):
+        self.v_pref=(self.p_goal-self.p)/self.dt
+        if np.linalg.norm(self.v_pref):
+            self.v_pref=self.v_pref/np.linalg.norm(self.v_pref)*self.v_max
+
 
 
 def colors(n):
@@ -145,9 +155,9 @@ def set_bg():
     '''set boundaries'''
     pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
     '''set start and goal positions'''
-    for agent in range(len(goal_positions)):
-        pg.draw.circle(screen,agents_colors[agent],to_pygame(start_positions[agent]),7,0)
-        pg.draw.circle(screen, agents_colors[agent], to_pygame(goal_positions[agent]),7, 1)
+    for r in range(len(robots)):
+        pg.draw.circle(screen,agents_colors[r],to_pygame(robots[r].p),7,0)
+        pg.draw.circle(screen, agents_colors[r], to_pygame(robots[r].p_goal),7, 1)
 
 
 
@@ -167,8 +177,8 @@ screen.fill(background_colour)
 
 data = json.load(open('P21.json'))
 bounding_polygon = data["bounding_polygon"]
-goal_positions=data["goal_positions"]
-start_positions=data["start_positions"]
+goal_positions=np.array(data["goal_positions"])
+start_positions=np.array(data["start_positions"])
 vehicle_L = data["vehicle_L"]
 vehicle_a_max = data["vehicle_a_max"]
 vehicle_omega_max = data["vehicle_omega_max"]
@@ -215,6 +225,13 @@ while not done:
         while (t1 - t0 < 1):
             t1 = time.time()
         start = True
+
+    for robot in robots:
+        robot.select_vel(robots)
+
+    for robot in robots:
+        robot.move()
+
 
     set_bg()
     #set_data(total_time * 0.1)
