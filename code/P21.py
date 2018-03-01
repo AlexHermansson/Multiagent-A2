@@ -66,7 +66,7 @@ class Robot():
         ORCA = []
         for robot in robots:
             if robot.index != self.index:
-                if np.linalg.norm(self.p-robot.p)<4:
+                if np.linalg.norm(self.p-robot.p)<2*self.v_max*self.tau:
                     u = self.compute_u(robot)
                     #if u.size > 0:
                     ORCA.append(u)
@@ -131,14 +131,14 @@ class Robot():
         B_x = r * np.cos(np.pi - theta + phi)
         B_y = r * np.sin(np.pi - theta + phi)
         B = center + np.array([B_x, B_y])
-        C = B / np.linalg.norm(B) * 3 * self.v_max  # 2 v_max is as large as it gets, but we want a margin. See drawing.
-        D = A / np.linalg.norm(A) * 3 * self.v_max
+        C = B+B / np.linalg.norm(B) * 3 * self.v_max  # 2 v_max is as large as it gets, but we want a margin. See drawing.
+        D = A+A / np.linalg.norm(A) * 3 * self.v_max
 
         return {'center':center, 'radius':r, 'A':A, 'B':B, 'C':C, 'D':D} # C and D are the furthest points in the polygon
 
     def set_v_pref(self):
         self.v_pref=(self.p_goal-self.p)/self.dt
-        if np.linalg.norm(self.v_pref):
+        if np.linalg.norm(self.v_pref) >self.v_max:
             self.v_pref=self.v_pref/np.linalg.norm(self.v_pref)*self.v_max
 
 

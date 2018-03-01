@@ -20,8 +20,8 @@ def create_VO(p):
     B_x = r * np.cos(np.pi - theta + phi)
     B_y = r * np.sin(np.pi - theta + phi)
     B = center + np.array([B_x, B_y])
-    C = B / np.linalg.norm(B) * 3 * v_max  # 2 v_max is as large as it gets, but we want a margin. See drawing.
-    D = A / np.linalg.norm(A) * 3 * v_max
+    C = B + B / np.linalg.norm(B) * 3 * v_max # 2 v_max is as large as it gets, but we want a margin. See drawing.
+    D = A + A / np.linalg.norm(A) * 3 * v_max
 
     return center, r, A, B, C, D # C and D are the furthest points in the polygon
 
@@ -60,7 +60,7 @@ def compute_u(p, v):
                 u_2) else (u_2, -u_2 / np.linalg.norm(u_2))
 
 
-p = np.ones(2)*2
+p = np.array((3,-3))
 center, r, A, B, C, D = create_VO(p)
 
 # circle
@@ -72,15 +72,15 @@ plt.plot(x, y)
 # polygon
 x_p = np.array([A[0], B[0], C[0], D[0]])
 y_p = np.array([A[1], B[1], C[1], D[1]])
-plt.scatter(A[0], A[1])
-plt.scatter(B[0], B[1])
-plt.scatter(C[0], C[1])
-plt.scatter(D[0], D[1])
+plt.scatter(A[0], A[1],c='R')
+plt.scatter(B[0], B[1],c='G')
+plt.scatter(C[0], C[1],c='b')
+plt.scatter(D[0], D[1],c='k')
 #plt.plot(x_p, y_p)
-plt.axis([-1, 5, -1, 4])
+#plt.axis([-1, 5, -1, 4])
 
 
-v = np.array([1, 0])
+v = np.array([0, -4])
 plt.scatter(v[0], v[1], marker='*')
 
 u_ = compute_u(p, v)
