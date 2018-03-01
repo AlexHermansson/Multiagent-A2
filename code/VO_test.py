@@ -29,22 +29,9 @@ def compute_u(p, v):
     center, r, A, B, C, D = create_VO(p)
 
     v_opt_rel = v
-
-
-    poly_contains = geometry.Polygon([A, B, C, D]).contains(geometry.Point(v_opt_rel))
-    circle_contains = geometry.Point(center).buffer(r).contains(geometry.Point(v_opt_rel))
-
-
-
-    if poly_contains:
-
-        a_1 = np
-
-
-
-
-
-    if geometry.Polygon([A, B, C, D]).contains(geometry.Point(v_opt_rel)):
+    polygon_contains=geometry.Polygon([A,center, B, C, D]).contains(geometry.Point(v_opt_rel))
+    circle_contains=geometry.Point(center).buffer(r).contains(geometry.Point(v_opt_rel))
+    if polygon_contains:
         x_1 = C
         x_2 = D
         u_1 = np.dot(x_1, v_opt_rel)/(np.dot(x_1, x_1))*x_1 - v_opt_rel
@@ -52,27 +39,26 @@ def compute_u(p, v):
 
         return (u_1, u_1/np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(u_2) else (u_2, u_2/np.linalg.norm(u_2))
 
-    elif geometry.Point(center).buffer(r).contains(geometry.Point(v_opt_rel)):
+    elif circle_contains:
         a = (v_opt_rel - center)*r/np.linalg.norm( v_opt_rel- center)
-        u= a-v_opt_rel
+        u= a-(v_opt_rel - center)
         return (u, u/np.linalg.norm(u))
 
     else:
-        sh_point = geometry.Point(v_opt_rel)
-        s = geometry.LineString([A, D])
         d1=geometry.LineString([A, D]).distance(geometry.Point(v_opt_rel))
         d2=geometry.Point(center).buffer(r).distance(geometry.Point(v_opt_rel))
         d3= geometry.LineString([B, C]).distance(geometry.Point(v_opt_rel))
         if d2 < d1 and d2<d3:
             u=(center-v_opt_rel)/np.linalg.norm(center-v_opt_rel)*d2
             return (u, -u/np.linalg.norm(u))
-        else:
-            x_1 = C
-            x_2 = D
+        elif d1 < d3:
+            x_1 = D
             u_1 = np.dot(x_1, v_opt_rel) / (np.dot(x_1, x_1)) * x_1 - v_opt_rel
-            u_2 = np.dot(x_2, v_opt_rel) / (np.dot(x_2, x_2)) * x_2 - v_opt_rel
-            return (u_1, -u_1 / np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(
-                u_2) else (u_2, -u_2 / np.linalg.norm(u_2))
+            return (u_1, -u_1 / np.linalg.norm(u_1))
+        else:
+            x_3=C
+            u_3 = np.dot(x_3, v_opt_rel) / (np.dot(x_3, x_3)) * x_3 - v_opt_rel
+            return (u_3, -u_3 / np.linalg.norm(u_3))
 
 
 p = np.array((1,1.2))
@@ -92,10 +78,12 @@ plt.scatter(B[0], B[1],c='G')
 plt.scatter(C[0], C[1],c='b')
 plt.scatter(D[0], D[1],c='k')
 #plt.plot(x_p, y_p)
-plt.axis([-2, 7, -2, 6])
+
+plt.axis([-4, 5, -4, 4])
 
 
-v = np.array([0.5, 0.8])
+v = np.array([-2, -2])
+
 plt.scatter(v[0], v[1], marker='*')
 
 u_ = compute_u(p, v)
