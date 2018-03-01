@@ -29,6 +29,21 @@ def compute_u(p, v):
     center, r, A, B, C, D = create_VO(p)
 
     v_opt_rel = v
+
+
+    poly_contains = geometry.Polygon([A, B, C, D]).contains(geometry.Point(v_opt_rel))
+    circle_contains = geometry.Point(center).buffer(r).contains(geometry.Point(v_opt_rel))
+
+
+
+    if poly_contains:
+
+        a_1 = np
+
+
+
+
+
     if geometry.Polygon([A, B, C, D]).contains(geometry.Point(v_opt_rel)):
         x_1 = C
         x_2 = D
@@ -60,7 +75,7 @@ def compute_u(p, v):
                 u_2) else (u_2, -u_2 / np.linalg.norm(u_2))
 
 
-p = np.array((3,-3))
+p = np.array((1,1.2))
 center, r, A, B, C, D = create_VO(p)
 
 # circle
@@ -77,10 +92,10 @@ plt.scatter(B[0], B[1],c='G')
 plt.scatter(C[0], C[1],c='b')
 plt.scatter(D[0], D[1],c='k')
 #plt.plot(x_p, y_p)
-#plt.axis([-1, 5, -1, 4])
+plt.axis([-2, 7, -2, 6])
 
 
-v = np.array([0, -4])
+v = np.array([0.5, 0.8])
 plt.scatter(v[0], v[1], marker='*')
 
 u_ = compute_u(p, v)
@@ -93,6 +108,8 @@ if u_:
     print(u)
 else:
     print('u is None')
+
+plt.scatter(0, 0, marker='+')
 plt.show()
 
 
