@@ -44,13 +44,10 @@ class Robot():
             for u_t in ORCA:
                 u=u_t[0]
                 n=u_t[1]
-                constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,n)},)
+                constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,n,)},)
 
             v_guess = np.zeros(2)
-            try:
-                res =  minimize(objective, v_guess, method='SLSQP', constraints=constraints, tol=1e-15)
-            except:
-                a=0
+            res =  minimize(objective, v_guess, method='SLSQP', constraints=constraints, tol=1e-15)
             if np.linalg.norm(res.x)> self.v_max:
                 a = 0
             if res.success:
@@ -100,7 +97,7 @@ class Robot():
                 d1=geometry.LineString([VO['A'], VO['D']]).distance(geometry.Point(v_opt_rel))
                 d2=geometry.Point(VO['center']).buffer(VO['radius']).distance(geometry.Point(v_opt_rel))
                 d3= geometry.LineString([VO['B'], VO['C']]).distance(geometry.Point(v_opt_rel))
-                if d2 < d1:
+                if d2 < d1 and d2<d3:
                     u=(VO['center']-v_opt_rel)/np.linalg.norm(VO['center']-v_opt_rel)*d2
                     return (u, -u/np.linalg.norm(u))
                 else:
@@ -109,7 +106,7 @@ class Robot():
                     u_1 = np.dot(x_1, v_opt_rel) / (np.dot(x_1, x_1)) * x_1 - v_opt_rel
                     u_2 = np.dot(x_2, v_opt_rel) / (np.dot(x_2, x_2)) * x_2 - v_opt_rel
                     return (u_1, -u_1 / np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(
-                        u_2) else u_2, (-u_2 / np.linalg.norm(u_2))
+                        u_2) else (u_2, -u_2 / np.linalg.norm(u_2))
         except:
             a=0
 
