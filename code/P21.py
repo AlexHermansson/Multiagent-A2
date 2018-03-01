@@ -52,8 +52,8 @@ class Robot():
                 a = 0
             if res.success:
                 self.v = res.x
-            else:
-                self.v = np.zeros(2)
+            #else:
+                #self.v = np.zeros(2)
 
         else:
 
@@ -77,50 +77,48 @@ class Robot():
 
         VO = self.create_VO(robot)
         v_opt_rel = self.v_opt - robot.v_opt
-        try:
-            if geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel)):
-                x_1 = VO['C']
-                x_2 = VO['D']
-                u_1 = np.dot(x_1, v_opt_rel)/(np.dot(x_1, x_1))*x_1 - v_opt_rel
-                u_2 = np.dot(x_2, v_opt_rel)/(np.dot(x_2, x_2))*x_2 - v_opt_rel
 
-                return (u_1, u_1/np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(u_2) else (u_2, u_2/np.linalg.norm(u_2))
+        if geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel)):
+            x_1 = VO['C']
+            x_2 = VO['D']
+            u_1 = np.dot(x_1, v_opt_rel)/(np.dot(x_1, x_1))*x_1 - v_opt_rel
+            u_2 = np.dot(x_2, v_opt_rel)/(np.dot(x_2, x_2))*x_2 - v_opt_rel
 
-            elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
-                center = VO['center']
-                r = VO['radius']
-                a = (v_opt_rel - center)*r/np.linalg.norm( v_opt_rel- center)
-                u= a-v_opt_rel
-                return (u, u/np.linalg.norm(u))
+            return (u_1, u_1/np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(u_2) else (u_2, u_2/np.linalg.norm(u_2))
+
+        elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
+            center = VO['center']
+            r = VO['radius']
+            a = (v_opt_rel - center)*r/np.linalg.norm( v_opt_rel- center)
+            u = a - (v_opt_rel - center)
+            return (u, u/np.linalg.norm(u))
+
+        else:
+            d1=geometry.LineString([VO['A'], VO['D']]).distance(geometry.Point(v_opt_rel))
+            d2=geometry.Point(VO['center']).buffer(VO['radius']).distance(geometry.Point(v_opt_rel))
+            d3= geometry.LineString([VO['B'], VO['C']]).distance(geometry.Point(v_opt_rel))
+            if d2 < d1 and d2<d3:
+                u=(VO['center']-v_opt_rel)/np.linalg.norm(VO['center']-v_opt_rel)*d2
+                return (u, -u/np.linalg.norm(u))
+
+            elif d1 < d3:
+                x_1 = VO['D']
+                u_1 = np.dot(x_1, v_opt_rel) / (np.dot(x_1, x_1)) * x_1 - v_opt_rel
+                return (u_1, -u_1 / np.linalg.norm(u_1))
 
             else:
-                d1=geometry.LineString([VO['A'], VO['D']]).distance(geometry.Point(v_opt_rel))
-                d2=geometry.Point(VO['center']).buffer(VO['radius']).distance(geometry.Point(v_opt_rel))
-                d3= geometry.LineString([VO['B'], VO['C']]).distance(geometry.Point(v_opt_rel))
-                if d2 < d1 and d2<d3:
-                    u=(VO['center']-v_opt_rel)/np.linalg.norm(VO['center']-v_opt_rel)*d2
-                    return (u, -u/np.linalg.norm(u))
-                else:
-                    x_1 = VO['C']
-                    x_2 = VO['D']
-                    u_1 = np.dot(x_1, v_opt_rel) / (np.dot(x_1, x_1)) * x_1 - v_opt_rel
-                    u_2 = np.dot(x_2, v_opt_rel) / (np.dot(x_2, x_2)) * x_2 - v_opt_rel
-                    return (u_1, -u_1 / np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(
-                        u_2) else (u_2, -u_2 / np.linalg.norm(u_2))
-        except:
-            a=0
+                x_3 = VO['C']
+                u_3 = np.dot(x_3, v_opt_rel) / (np.dot(x_3, x_3)) * x_3 - v_opt_rel
+                return (u_3, -u_3 / np.linalg.norm(u_3))
 
-
-        #return np.array([])
 
     def create_VO(self, robot):
         """Creating the velocity obstacle"""
 
         center = (robot.p - self.p)/self.tau
         r = (self.radius + robot.radius)/self.tau
-        sh_circle = geometry.Point(center).buffer(r)
-
         d = np.linalg.norm(center)
+
         if np.abs(r/d)>1:
             a=0
         theta = np.arccos(r / d)
@@ -204,7 +202,7 @@ background_colour = (255, 255, 255)
 screen.fill(background_colour)
 
 
-data = json.load(open('P21.json'))
+data = json.load(open('Ptest.json'))
 bounding_polygon = data["bounding_polygon"]
 goal_positions=np.array(data["goal_positions"])
 start_positions=np.array(data["start_positions"])
