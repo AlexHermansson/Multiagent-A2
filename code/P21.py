@@ -10,7 +10,8 @@ from shapely import geometry
 
 class Robot():
 
-    def __init__(self, position, goal_position, v_max, index, tau = 1):
+
+    def __init__(self, position, goal_position, v_max, index, tau = 400):
         self.p = position
         self.p_goal = goal_position
         self.v = np.zeros(2)
@@ -50,14 +51,14 @@ class Robot():
                 constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,n,)},)
 
             v_guess = np.zeros(2)
-            res = minimize(objective, v_guess, constraints=constraints,tol=1e-10)
-            if np.linalg.norm(res.x)> self.v_max+1e-8:
-                a = 0
+            res = minimize(objective, v_guess, method='SLSQP', constraints=constraints)
             if res.success:
+                if np.linalg.norm(res.x) > self.v_max + 1e-3:
+                    a = 0
                 self.v = res.x
             else:
                 a=0
-                #self.v = np.zeros(2)
+                self.v = np.zeros(2)
 
         else:
 
@@ -70,10 +71,10 @@ class Robot():
         ORCA = []
         for robot in robots:
             if robot.index != self.index:
-                #if np.linalg.norm(self.p-robot.p)<2*self.v_max*self.tau:
-                u = self.compute_u(robot)
-                #if u.size > 0:
-                ORCA.append(u)
+                if np.linalg.norm(self.p-robot.p)<2*self.v_max*self.tau:
+                    u = self.compute_u(robot)
+                    #if u.size > 0:
+                    ORCA.append(u)
         self.ORCA=ORCA
 
         return ORCA
@@ -83,28 +84,34 @@ class Robot():
         VO = self.create_VO(robot)
         v_opt_rel = self.v_opt - robot.v_opt
 
-        if geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel)):
-            x_1 = VO['C']
-            x_2 = VO['D']
+        poly_contains = geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel))
+        sh_circle = geometry.Point(VO['center']).buffer(VO['radius'])
+        circle_contains = sh_circle.contains(geometry.Point(v_opt_rel))
+
+        if poly_contains:
+            x_1 = VO['C']; x_2 = VO['D']
             u_1 = np.dot(x_1, v_opt_rel)/(np.dot(x_1, x_1))*x_1 - v_opt_rel
             u_2 = np.dot(x_2, v_opt_rel)/(np.dot(x_2, x_2))*x_2 - v_opt_rel
 
             return (u_1, u_1/np.linalg.norm(u_1)) if np.linalg.norm(u_1) < np.linalg.norm(u_2) else (u_2, u_2/np.linalg.norm(u_2))
 
-        elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
-            center = VO['center']
-            r = VO['radius']
-            a = (v_opt_rel - center)*r/np.linalg.norm( v_opt_rel- center)
-            u = a - (v_opt_rel - center)
-            return (u, u/np.linalg.norm(u))
+        elif circle_contains:
+
+            x_1 = VO['C']; x_2 = VO['D']
+            dist_1 = np.dot(x_1, v_opt_rel) / (np.dot(x_1, x_1)) * x_1 - v_opt_rel
+            dist_2 = np.dot(x_2, v_opt_rel) / (np.dot(x_2, x_2)) * x_2 - v_opt_rel
+            dist_min = dist_1 if np.linalg.norm(dist_1) < np.linalg.norm(dist_2) else dist_2
+            sh_point = sh_circle.boundary.intersection(geometry.LineString((geometry.Point(v_opt_rel), geometry.Point(v_opt_rel + dist_min))))
+            point = np.array(sh_point.coords).reshape(-1)
+            return point - v_opt_rel, (point - v_opt_rel)/np.linalg.norm(point - v_opt_rel)
 
         else:
-            d1=geometry.LineString([VO['A'], VO['D']]).distance(geometry.Point(v_opt_rel))
-            d2=geometry.Point(VO['center']).buffer(VO['radius']).distance(geometry.Point(v_opt_rel))
-            d3= geometry.LineString([VO['B'], VO['C']]).distance(geometry.Point(v_opt_rel))
-            if d2 < d1 and d2<d3:
-                u=(VO['center']-v_opt_rel)/np.linalg.norm(VO['center']-v_opt_rel)*d2
-                return (u, -u/np.linalg.norm(u))
+            d1 = geometry.LineString([VO['A'], VO['D']]).distance(geometry.Point(v_opt_rel))
+            d2 = geometry.Point(VO['center']).buffer(VO['radius']).distance(geometry.Point(v_opt_rel))
+            d3 = geometry.LineString([VO['B'], VO['C']]).distance(geometry.Point(v_opt_rel))
+            if d2 < d1 and d2 < d3:
+                u = (VO['center'] - v_opt_rel) / np.linalg.norm(VO['center'] - v_opt_rel) * d2
+                return (u, -u / np.linalg.norm(u))
 
             elif d1 < d3:
                 x_1 = VO['D']
@@ -115,6 +122,14 @@ class Robot():
                 x_3 = VO['C']
                 u_3 = np.dot(x_3, v_opt_rel) / (np.dot(x_3, x_3)) * x_3 - v_opt_rel
                 return (u_3, -u_3 / np.linalg.norm(u_3))
+
+
+        '''elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
+            center = VO['center']
+            r = VO['radius']
+            a = (v_opt_rel - center)*r/np.linalg.norm( v_opt_rel- center)
+            u = a - (v_opt_rel - center)
+            return (u, u/np.linalg.norm(u))'''
 
 
 
@@ -199,8 +214,8 @@ def set_bg():
                 a=robots[r].p+robots[r].v+0.5*orca[0]
                 b=a+20*n_perp
                 c=a-20*n_perp
-                pg.draw.line(screen,agents_colors[r],to_pygame(b),to_pygame(c))
-                pg.draw.line(screen,agents_colors[r],to_pygame(a),to_pygame(a+ orca[1]))
+                #pg.draw.line(screen,agents_colors[r],to_pygame(b),to_pygame(c))
+                #pg.draw.line(screen,agents_colors[r],to_pygame(a),to_pygame(a+ orca[1]))
 
 
 
@@ -219,7 +234,7 @@ background_colour = (255, 255, 255)
 screen.fill(background_colour)
 
 
-data = json.load(open('Ptest.json'))
+data = json.load(open('P21.json'))
 bounding_polygon = data["bounding_polygon"]
 goal_positions=np.array(data["goal_positions"])
 start_positions=np.array(data["start_positions"])

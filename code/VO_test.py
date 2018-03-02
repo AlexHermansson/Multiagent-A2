@@ -61,7 +61,7 @@ def compute_u(p, v):
             return (u_3, -u_3 / np.linalg.norm(u_3))
 
 
-p = np.array((-2,-2))
+p = np.array((1,1.2))
 center, r, A, B, C, D = create_VO(p)
 
 # circle
@@ -78,10 +78,12 @@ plt.scatter(B[0], B[1],c='G')
 plt.scatter(C[0], C[1],c='b')
 plt.scatter(D[0], D[1],c='k')
 #plt.plot(x_p, y_p)
+
 plt.axis([-4, 5, -4, 4])
 
 
 v = np.array([-2, -2])
+
 plt.scatter(v[0], v[1], marker='*')
 
 u_ = compute_u(p, v)
@@ -94,6 +96,8 @@ if u_:
     print(u)
 else:
     print('u is None')
+
+plt.scatter(0, 0, marker='+')
 plt.show()
 
 
