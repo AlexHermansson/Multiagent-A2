@@ -10,7 +10,7 @@ from shapely import geometry
 
 class Robot():
 
-    def __init__(self, position, goal_position, v_max, index, tau = 2):
+    def __init__(self, position, goal_position, v_max, index, tau = 10):
         self.p = position
         self.p_goal = goal_position
         self.v = np.zeros(2)
@@ -50,12 +50,13 @@ class Robot():
                 constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,n,)},)
 
             v_guess = np.zeros(2)
-            res =  minimize(objective, v_guess, constraints=constraints, tol=1e-16)
-            if np.linalg.norm(res.x)> self.v_max:
+            res = minimize(objective, v_guess, constraints=constraints,tol=1e-10)
+            if np.linalg.norm(res.x)> self.v_max+1e-8:
                 a = 0
             if res.success:
                 self.v = res.x
-            #else:
+            else:
+                a=0
                 #self.v = np.zeros(2)
 
         else:
@@ -78,7 +79,7 @@ class Robot():
         return ORCA
 
     def compute_u(self, robot):
-
+        #todo: fix front of the cone fucking god
         VO = self.create_VO(robot)
         v_opt_rel = self.v_opt - robot.v_opt
 
@@ -140,9 +141,10 @@ class Robot():
         return {'center':center, 'radius':r, 'A':A, 'B':B, 'C':C, 'D':D} # C and D are the furthest points in the polygon
 
     def set_v_pref(self):
-        self.v_pref=(self.p_goal-self.p)/self.dt
+        self.v_pref=(self.p_goal-self.p)
         if np.linalg.norm(self.v_pref) >self.v_max:
             self.v_pref=self.v_pref/np.linalg.norm(self.v_pref)*self.v_max
+        #todo:check here
 
 
 
@@ -156,7 +158,6 @@ def colors(n):
     purple=(100,0,255)
     pink=(225,0,255)
     #col=[red,orange,green,light_blue,blue,purple,pink]
-    #todo:deal with more than 7 robots
     ret = []
     r =255# int(random.random() * 256)
     g =0# int(random.random() * 256)
@@ -190,6 +191,17 @@ def set_bg():
     for r in range(len(robots)):
         pg.draw.circle(screen,agents_colors[r],to_pygame(robots[r].p),7,0)
         pg.draw.circle(screen, agents_colors[r], to_pygame(robots[r].p_goal),7, 1)
+        pg.draw.line(screen,(0,0,0),to_pygame(robots[r].p),to_pygame(robots[r].p+robots[r].v_pref))
+        pg.draw.line(screen, (255, 0, 0), to_pygame(robots[r].p), to_pygame(robots[r].p + robots[r].v))
+        if robots[r].index==3:
+            for orca in robots[r].ORCA:
+                n_perp=np.array((-orca[1][1],orca[1][0]))
+                a=robots[r].p+robots[r].v+0.5*orca[0]
+                b=a+20*n_perp
+                c=a-20*n_perp
+                pg.draw.line(screen,agents_colors[r],to_pygame(b),to_pygame(c))
+                pg.draw.line(screen,agents_colors[r],to_pygame(a),to_pygame(a+ orca[1]))
+
 
 
 
@@ -224,7 +236,6 @@ obstacles=[]
 for d in data:
     if "obstacle" in d:
         obstacles.append(data[d])
-        #sh_obstacles.append(Polygon(data[d])) todo:maybe use shapely
 
 '''convert obstacles and boundaries to pygame'''
 pg_obstacles=[]
@@ -241,8 +252,8 @@ for i in range(len(start_positions)):
     robots.append(robot)
 
 time_step=0
-set_bg()
-pg.display.flip()
+#set_bg()
+#pg.display.flip()
 start = False
 done = False
 
