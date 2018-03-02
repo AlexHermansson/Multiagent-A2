@@ -22,10 +22,13 @@ class Robot():
         self.dt = 0.1
         self.v_pref=None
         self.set_v_pref()
+        self.ORCA=[]
 
 
     def move(self):
         """Update position"""
+        if self.ORCA:
+            a=0
         self.p += self.dt*self.v
         self.v_opt=self.v
         self.set_v_pref()
@@ -36,7 +39,7 @@ class Robot():
         if ORCA:
             objective = lambda v: np.linalg.norm(v - self.v_pref)
 
-            constraint1 = lambda v, u,n: np.dot(v - (self.v_opt + 1/2 * u),n)
+            constraint1 = lambda v, u, n: np.dot(v - (self.v_opt + 1/2 * u), n)
             constraint2 = lambda v: self.v_max - np.linalg.norm(v)
 
 
@@ -47,7 +50,7 @@ class Robot():
                 constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,n,)},)
 
             v_guess = np.zeros(2)
-            res =  minimize(objective, v_guess, method='SLSQP', constraints=constraints, tol=1e-15)
+            res =  minimize(objective, v_guess, constraints=constraints, tol=1e-16)
             if np.linalg.norm(res.x)> self.v_max:
                 a = 0
             if res.success:
@@ -66,10 +69,11 @@ class Robot():
         ORCA = []
         for robot in robots:
             if robot.index != self.index:
-                if np.linalg.norm(self.p-robot.p)<2*self.v_max*self.tau:
-                    u = self.compute_u(robot)
-                    #if u.size > 0:
-                    ORCA.append(u)
+                #if np.linalg.norm(self.p-robot.p)<2*self.v_max*self.tau:
+                u = self.compute_u(robot)
+                #if u.size > 0:
+                ORCA.append(u)
+        self.ORCA=ORCA
 
         return ORCA
 
@@ -110,6 +114,7 @@ class Robot():
                 x_3 = VO['C']
                 u_3 = np.dot(x_3, v_opt_rel) / (np.dot(x_3, x_3)) * x_3 - v_opt_rel
                 return (u_3, -u_3 / np.linalg.norm(u_3))
+
 
 
     def create_VO(self, robot):
