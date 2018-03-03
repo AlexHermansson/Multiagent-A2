@@ -10,7 +10,8 @@ from shapely import geometry
 
 class Robot():
 
-    def __init__(self, position, goal_position, v_max, index, tau = 5):
+
+    def __init__(self, position, goal_position, v_max, index, tau = 400):
         self.p = position
         self.p_goal = goal_position
         self.v = np.zeros(2)
@@ -50,14 +51,14 @@ class Robot():
                 constraints += ({'type':'ineq', 'fun':constraint1, 'args':(u,n,)},)
 
             v_guess = np.zeros(2)
-            res = minimize(objective, v_guess, constraints=constraints,tol=1e-10)
-            if np.linalg.norm(res.x)> self.v_max+1e-8:
-                a = 0
+            res = minimize(objective, v_guess, method='SLSQP', constraints=constraints)
             if res.success:
+                if np.linalg.norm(res.x) > self.v_max + 1e-3:
+                    a = 0
                 self.v = res.x
             else:
                 a=0
-                #self.v = np.zeros(2)
+                self.v = np.zeros(2)
 
         else:
 
@@ -70,10 +71,10 @@ class Robot():
         ORCA = []
         for robot in robots:
             if robot.index != self.index:
-                #if np.linalg.norm(self.p-robot.p)<2*self.v_max*self.tau:
-                u = self.compute_u(robot)
-                #if u.size > 0:
-                ORCA.append(u)
+                if np.linalg.norm(self.p-robot.p)<2*self.v_max*self.tau:
+                    u = self.compute_u(robot)
+                    #if u.size > 0:
+                    ORCA.append(u)
         self.ORCA=ORCA
 
         return ORCA
@@ -213,8 +214,8 @@ def set_bg():
                 a=robots[r].p+robots[r].v+0.5*orca[0]
                 b=a+20*n_perp
                 c=a-20*n_perp
-                pg.draw.line(screen,agents_colors[r],to_pygame(b),to_pygame(c))
-                pg.draw.line(screen,agents_colors[r],to_pygame(a),to_pygame(a+ orca[1]))
+                #pg.draw.line(screen,agents_colors[r],to_pygame(b),to_pygame(c))
+                #pg.draw.line(screen,agents_colors[r],to_pygame(a),to_pygame(a+ orca[1]))
 
 
 
