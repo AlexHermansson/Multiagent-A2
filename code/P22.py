@@ -4,12 +4,12 @@ import pyvisgraph as vg
 import pygame as pg
 import time
 
-
+#np.random.seed(100)
 def create_travel_list(gene, k, N):
     first_start = False  # says if we have found the first start position
     travel_list = []
     goal_list = []
-    pos_list = np.array([])
+    pos_list = np.array([],dtype=int)
 
     for i, elem in enumerate(gene):
 
@@ -58,8 +58,7 @@ def fitness(gene, k, N):
                 if i == L-1:
                     cost += D_sg[path[i-1], path[i]-(k+N)]
                 else:
-                    a = path[i] -k
-                    cost += D_sp[path[i-1], path[i]-k]
+                    cost += D_sp[path[i-1]][path[i]-k]
 
             else:
 
@@ -209,7 +208,7 @@ N = 10# number of pickup points
 k = 3 # number of robots
 gene = np.arange(N + 2*k)
 np.random.shuffle(gene)
-fitness(gene,k,N)
+test=fitness(gene,k,N)
 
 time_step=0
 start = False
