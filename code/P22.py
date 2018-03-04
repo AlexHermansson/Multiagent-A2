@@ -5,6 +5,48 @@ import pygame as pg
 import time
 
 
+def create_travel_list(gene, k, N):
+    first_start = False  # says if we have found the first start position
+    travel_list = []
+    goal_list = []
+    pos_list = np.array([])
+
+    for i, elem in enumerate(gene):
+
+        # if a start position
+        if elem < k:
+            if not first_start:
+                path = np.array([elem])
+                first_start = True
+            else:
+                travel_list.append(path)
+                path = np.array([elem])
+
+        # if a goal
+        elif elem >= k + N:
+            goal_list.append(elem)
+
+        # if a pickup point
+        else:
+            if not first_start:
+                pos_list = np.append(pos_list, elem)
+            else:
+                path = np.append(path, elem)
+
+    if pos_list.size > 0:
+        path = np.append(path, pos_list)
+    travel_list.append(path)
+
+    for i, goal in enumerate(goal_list):
+        travel_list[i] = np.append(travel_list[i], goal)
+
+    return travel_list
+
+
+def fitness(gene, k, N):
+    travel_list = create_travel_list(gene, k, N)
+
+
 def point_distances(points, graph):
     N = len(points)
     D = np.zeros((N, N))
@@ -137,34 +179,12 @@ D_pp = np.load('D_pp.npy')
 D_pg = np.load('D_pg.npy')
 D_sg = np.load('D_sg.npy')
 
-N = 30 # number of pickup points
-k = 6 # number of robots
+N = 10# number of pickup points
+k = 3 # number of robots
 gene = np.arange(N + 2*k)
 np.random.shuffle(gene)
 
-
-def fitness(gene, k, N):
-
-    first_start = False
-    first_goal = False
-    travel_list = []
-    goal_list = []
-
-    for i, elem in enumerate(gene):
-
-        # if a start position
-        if elem < k:
-            pass
-
-        # if a goal
-        elif elem >= k + N:
-            pass
-
-        # if a pickup point
-        else:
-            pass
-
-
+fitness(gene,k,N)
 
 time_step=0
 start = False
