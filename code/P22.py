@@ -70,12 +70,17 @@ for obstacle in obstacles:
 
 g=vg.VisGraph()
 g.build(vg_obstacles)
-
+a = [edge for edge in g.visgraph.edges]
+p1 = a[0].p1
 pg_edges=[]
 
-for edge in g.visgraph.edges:
+for graph_edge in g.visgraph.edges:
+
+    p1 = graph_edge.p1; p2 = graph_edge.p2
+    edge = [p1, p2]
     pg_edges.append(list_to_pygame(edge))
 
+a = 0
 
 
 time_step=0
