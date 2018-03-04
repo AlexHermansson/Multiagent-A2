@@ -137,7 +137,32 @@ D_pp = np.load('D_pp.npy')
 D_pg = np.load('D_pg.npy')
 D_sg = np.load('D_sg.npy')
 
+N = 30 # number of pickup points
+k = 6 # number of robots
+gene = np.arange(N + 2*k)
+np.random.shuffle(gene)
 
+
+def fitness(gene, k, N):
+
+    first_start = False
+    first_goal = False
+    travel_list = []
+    goal_list = []
+
+    for i, elem in enumerate(gene):
+
+        # if a start position
+        if elem < k:
+            pass
+
+        # if a goal
+        elif elem >= k + N:
+            pass
+
+        # if a pickup point
+        else:
+            pass
 
 
 
