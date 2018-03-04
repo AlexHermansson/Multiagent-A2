@@ -44,8 +44,34 @@ def create_travel_list(gene, k, N):
 
 
 def fitness(gene, k, N):
-    travel_list = create_travel_list(gene, k, N)
 
+    travel_list = create_travel_list(gene, k, N)
+    max_cost = -np.inf
+
+    for path in travel_list:
+        L = len(path)
+        cost = 0
+        for i in range(1, L):
+
+            if i == 1:
+                # if only start and goal in the path
+                if i == L-1:
+                    cost += D_sg[path[i-1], path[i]-(k+N)]
+                else:
+                    a = path[i] -k
+                    cost += D_sp[path[i-1], path[i]-k]
+
+            else:
+
+                if i == L-1:
+                    cost += D_pg[path[i]-(k+N), path[i-1]-k]
+                else:
+                    cost += D_pp[path[i-1]-k, path[i]-k]
+
+        if cost > max_cost:
+            max_cost = cost
+
+    return max_cost
 
 def point_distances(points, graph):
     N = len(points)
@@ -183,7 +209,6 @@ N = 10# number of pickup points
 k = 3 # number of robots
 gene = np.arange(N + 2*k)
 np.random.shuffle(gene)
-
 fitness(gene,k,N)
 
 time_step=0
