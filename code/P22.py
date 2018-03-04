@@ -17,6 +17,8 @@ class VRP_GA():
         self.D_sp = D_sp; self.D_sg = D_sg
         self.population_size = population_size
         self.population, self.fitness_values, self.best_score, self.best_gene = self.init_population()
+        self.best_scores=np.array([self.best_score])
+        self.generation_scores=np.array(([self.best_score]))
 
 
     def genetic_algorithm(self, generations=50, plot = False, epsilon = 0.01):
@@ -24,25 +26,15 @@ class VRP_GA():
         the fitness of an gene. epsilon is the mutation rate"""
 
         for generation in range(generations):
-            new_population = np.zeros(self.population_size)
-            for j in range(self.population_size):
-                x = self.gene_selection(self.population) # parents x and y
-                y = self.gene_selection(self.population)
-                child1, child2 = self.crossover(x, y)
-                if np.random.rand() < epsilon:
-                    self.mutate(child1)
-                if np.random.rand() < epsilon:
-                    self.mutate(child2)
-                new_population[j] = child1
-                new_population[j + self.population_size] = child2
-                if plot:
-                    pass
-                    #do stuff with error
-            self.population = new_population
+
+            self.population = self.new_population(epsilon)
             self.fitness_values, best_score, best_gene = self.population_fitness(self.population)
             if best_score < self.best_score:
                 self.best_score = best_score
                 self.best_gene = best_gene
+            if plot:
+                self.best_scores=np.append(self.best_scores,self.best_score)
+                self.generation_scores=np.append(self.generation_scores,best_score)
 
 
     def population_fitness(self, population):
@@ -138,17 +130,31 @@ class VRP_GA():
 
         elif selection_rule == 'tournament':
             # returns the best gene of a subset of the input population
-            batch_size = int(self.population_size / 5)
+            batch_size = int(self.population_size / 15)
             #batch_size = min(self.population_size, batch_size)
             batch_index = random.sample(range(self.population_size), batch_size)
             population_batch = self.population[batch_index]
             fitness_batch = self.fitness_values[batch_index]
-            best_index = np.min(fitness_batch)
+            best_index = np.argmin(fitness_batch)
             return population_batch[best_index]
 
         else:
             raise ValueError('Not a supported selection rule.')
 
+    def new_population(self,epsilon):
+        new_population = np.zeros((self.population_size, self.N + (2 * self.k)),dtype=int)
+        for j in range(self.population_size):
+            x = self.gene_selection()  # parents x and y
+            y = self.gene_selection()
+            child1, child2 = self.crossover(x, y)
+            if np.random.rand() < epsilon:
+                self.mutate(child1)
+            if np.random.rand() < epsilon:
+                self.mutate(child2)
+            new_population[j] = child1
+            new_population[self.population_size - j - 1] = child2
+
+        return new_population
     '''def best_gene(self, population):
         """Returns the gene with highest fitness in a population."""
 
@@ -169,7 +175,7 @@ class VRP_GA():
         c1 = np.min(cuts); c2 = np.max(cuts)
 
         chromosome1 = x[c1:c2]
-        child1 = -np.ones(x.shape)
+        child1 = -np.ones(x.shape,dtype=int)
         child1[c1:c2] = chromosome1
 
         for elem in y:
@@ -178,7 +184,7 @@ class VRP_GA():
                 child1[i] = elem
 
         chromosome2 = y[c1:c2]
-        child2 = -np.ones(x.shape)
+        child2 = -np.ones(x.shape,dtype=int)
         child2[c1:c2] = chromosome2
 
         for elem in x:
@@ -428,7 +434,10 @@ generations = 50
 #test=fitness(gene,k,N)
 
 vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size)
-vrp_ga.genetic_algorithm(generations)
+vrp_ga.genetic_algorithm(generations,True)
+
+
+
 
 time_step=0
 start = False
