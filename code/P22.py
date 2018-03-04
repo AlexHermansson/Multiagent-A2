@@ -141,8 +141,8 @@ class VRP_GA():
         else:
             raise ValueError('Not a supported selection rule.')
 
-    def new_population(self,epsilon):
-        new_population = np.zeros((self.population_size, self.N + (2 * self.k)),dtype=int)
+    def new_population(self, epsilon):
+        new_population = np.zeros((self.population_size, self.N + (2 * self.k)), dtype=int)
         for j in range(self.population_size):
             x = self.gene_selection()  # parents x and y
             y = self.gene_selection()
@@ -425,16 +425,19 @@ D_pp = np.load('D_pp.npy')
 D_pg = np.load('D_pg.npy')
 D_sg = np.load('D_sg.npy')
 
-N = 10# number of pickup points
-k = 3 # number of robots
-pop_size = 50
-generations = 50
+N = len(points_of_interest)
+k = len(start_positions)
+
+#N = 10# number of pickup points
+#k = 3 # number of robots
+pop_size = 100
+generations = 20
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
 #test=fitness(gene,k,N)
 
 vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size)
-vrp_ga.genetic_algorithm(generations,True)
+vrp_ga.genetic_algorithm(generations,True, 0.1)
 
 
 
