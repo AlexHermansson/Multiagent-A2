@@ -4,6 +4,47 @@ import pyvisgraph as vg
 import pygame as pg
 import time
 
+
+def point_distances(points, graph):
+    N = len(points)
+    D = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            if i > j:
+                shortest_path = graph.shortest_path(vg.Point(points[i][0], points[i][1]), vg.Point(points[j][0], points[j][1]))
+                D[i, j] = path_to_distance(shortest_path)
+
+    D += D.T
+
+    return D
+
+def set_distances(points1, points2, graph):
+    """ The distances between two sets of points.
+    First argument should be start or goal."""
+    K = len(points1)
+    N = len(points2)
+
+    D = np.zeros((K, N))
+    for i in range(K):
+        for j in range(N):
+            shortest_path = graph.shortest_path(vg.Point(points1[i][0], points1[i][1]), vg.Point(points2[j][0], points2[j][1]))
+            D[i, j] = path_to_distance(shortest_path)
+
+    return D
+
+def path_to_distance(path):
+    """Assume path is given as on VG object form."""
+    dist = 0
+    for i in range(1, len(path)):
+        dist += np.linalg.norm(to_np(path[i - 1]) - to_np(path[i]))
+    return dist
+
+def to_np(point):
+    """From VG point to ndarray"""
+    x = point.x
+    y = point.y
+    return np.array([x, y])
+
 def list_to_pygame(list_of_points):
     pg_list_of_points=[]
     for point in list_of_points:
@@ -48,7 +89,7 @@ for d in data:
     if "obstacle" in d:
         obstacles.append(data[d])
 
-points_of_interest=data["points_of_interest"]
+points_of_interest=np.array(data["points_of_interest"])
 start_positions=np.array(data["start_positions"])
 vehicle_L = data["vehicle_L"]
 vehicle_a_max = data["vehicle_a_max"]
@@ -81,7 +122,23 @@ for edge in g.visgraph.edges:
     p2=[edge.p2.x,edge.p2.y]
     pg_edges.append(list_to_pygame([p1,p2]))
 
-a = 0
+
+#D_sp = set_distances(start_positions, points_of_interest, g)
+#D_pp = point_distances(points_of_interest, g)
+#D_pg = set_distances(goal_positions, points_of_interest, g)
+#D_sg = set_distances(start_positions, goal_positions, g)
+#np.save('D_sp', D_sp)
+#np.save('D_pp', D_pp)
+#np.save('D_pg', D_pg)
+#np.save('D_sg', D_sg)
+
+D_sp = np.load('D_sp.npy')
+D_pp = np.load('D_pp.npy')
+D_pg = np.load('D_pg.npy')
+D_sg = np.load('D_sg.npy')
+
+
+
 
 
 time_step=0
