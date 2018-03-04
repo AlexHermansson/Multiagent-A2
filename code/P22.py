@@ -2,10 +2,225 @@ import numpy as np
 import json
 import pyvisgraph as vg
 import pygame as pg
+import matplotlib.pyplot as plt
 import time
+import random
 
 #np.random.seed(100)
-def create_travel_list(gene, k, N):
+
+
+class VRP_GA():
+
+    def __init__(self, N, k, D_pg, D_pp, D_sp, D_sg, population_size):
+        self.N = N; self.k = k
+        self.D_pg = D_pg; self.D_pp = D_pp
+        self.D_sp = D_sp; self.D_sg = D_sg
+        self.population_size = population_size
+        self.population, self.fitness_values, self.best_score, self.best_gene = self.init_population()
+
+
+    def genetic_algorithm(self, generations=50, plot = False, epsilon = 0.01):
+        """Takes a population with k genes and a fitness function which evaluates
+        the fitness of an gene. epsilon is the mutation rate"""
+
+        for generation in range(generations):
+            new_population = np.zeros(self.population_size)
+            for j in range(self.population_size):
+                x = self.gene_selection(self.population) # parents x and y
+                y = self.gene_selection(self.population)
+                child1, child2 = self.crossover(x, y)
+                if np.random.rand() < epsilon:
+                    self.mutate(child1)
+                if np.random.rand() < epsilon:
+                    self.mutate(child2)
+                new_population[j] = child1
+                new_population[j + self.population_size] = child2
+                if plot:
+                    pass
+                    #do stuff with error
+            self.population = new_population
+            self.fitness_values, best_score, best_gene = self.population_fitness(self.population)
+            if best_score < self.best_score:
+                self.best_score = best_score
+                self.best_gene = best_gene
+
+
+    def population_fitness(self, population):
+        """Calculates the fitness of a population"""
+        fitness_values = np.zeros(self.population_size)
+        best_index = 0
+        best_fitness = np.inf
+        for i, gene in enumerate(population):
+            fitness = self.fitness(gene)
+            fitness_values[i] += fitness
+            if fitness < best_fitness:
+                best_index = i
+                best_fitness = fitness
+
+        best_gene = population[best_index]
+
+        return fitness_values, best_fitness, best_gene
+
+    def fitness(self, gene):
+
+        travel_list = self.create_travel_list(gene)
+        max_cost = -np.inf
+
+        for path in travel_list:
+            L = len(path)
+            cost = 0
+            for i in range(1, L):
+
+                if i == 1:
+                    # if only start and goal in the path
+                    if i == L - 1:
+                        cost += D_sg[path[i - 1], path[i] - (self.k + self.N)]
+                    else:
+                        cost += D_sp[path[i - 1]][path[i] - self.k]
+
+                else:
+
+                    if i == L - 1:
+                        cost += D_pg[path[i] - (self.k + self.N), path[i - 1] - self.k]
+                    else:
+                        cost += D_pp[path[i - 1] - self.k, path[i] - self.k]
+
+            if cost > max_cost:
+                max_cost = cost
+
+        return max_cost
+
+    def create_travel_list(self, gene):
+        first_start = False  # says if we have found the first start position
+        travel_list = []
+        goal_list = []
+        pos_list = np.array([], dtype=int)
+
+        for i, elem in enumerate(gene):
+
+            # if a start position
+            if elem < self.k:
+                if not first_start:
+                    path = np.array([elem])
+                    first_start = True
+                else:
+                    travel_list.append(path)
+                    path = np.array([elem])
+
+            # if a goal
+            elif elem >= self.k + self.N:
+                goal_list.append(elem)
+
+            # if a pickup point
+            else:
+                if not first_start:
+                    pos_list = np.append(pos_list, elem)
+                else:
+                    path = np.append(path, elem)
+
+        if pos_list.size > 0:
+            path = np.append(path, pos_list)
+        travel_list.append(path)
+
+        for i, goal in enumerate(goal_list):
+            travel_list[i] = np.append(travel_list[i], goal)
+
+        return travel_list
+
+
+
+    def gene_selection(self, selection_rule='tournament'):
+        """Takes a population as input, outputs a random gene."""
+
+        if selection_rule == 'random':
+            rand = np.random.randint(0, self.population_size)
+            return self.population[rand]
+
+        elif selection_rule == 'tournament':
+            # returns the best gene of a subset of the input population
+            batch_size = int(self.population_size / 5)
+            #batch_size = min(self.population_size, batch_size)
+            batch_index = random.sample(range(self.population_size), batch_size)
+            population_batch = self.population[batch_index]
+            fitness_batch = self.fitness_values[batch_index]
+            best_index = np.min(fitness_batch)
+            return population_batch[best_index]
+
+        else:
+            raise ValueError('Not a supported selection rule.')
+
+    '''def best_gene(self, population):
+        """Returns the gene with highest fitness in a population."""
+
+        best_fitness = np.inf
+        for gene in population:
+            fitness = self.fitness(gene)
+            if fitness < best_fitness:
+                best_fitness = fitness
+                best_gene = gene
+
+        self.best_score = best_fitness
+        return best_gene'''
+
+    def crossover(self, x, y):
+        """Order 1 cross over reproduction."""
+
+        cuts = random.sample(range(x.size), 2)
+        c1 = np.min(cuts); c2 = np.max(cuts)
+
+        chromosome1 = x[c1:c2]
+        child1 = -np.ones(x.shape)
+        child1[c1:c2] = chromosome1
+
+        for elem in y:
+            if elem not in chromosome1:
+                i = np.where(child1 == -1)[0][0]
+                child1[i] = elem
+
+        chromosome2 = y[c1:c2]
+        child2 = -np.ones(x.shape)
+        child2[c1:c2] = chromosome2
+
+        for elem in x:
+            if elem not in chromosome2:
+                i = np.where(child2 == -1)[0][0]
+                child2[i] = elem
+
+
+        return child1, child2
+
+
+    '''def distance(self, p1, p2, measure='euclidean'):
+        """Distance between points p1 and p2 with respect to some metric."""
+
+        if measure == 'euclidean':
+            return np.linalg.norm(p1 - p2)
+
+        elif measure == 'visibility graph':
+            pass
+
+        else:
+            raise ValueError('Not a supported measure.')'''
+
+    def mutate(self, gene):
+        """Mutate an gene, swap two of the 'nodes'."""
+
+        i, j = random.sample(range(self.N), 2)
+        gene[[i, j]] = gene[[j, i]]
+
+    def init_population(self):
+        """Returns a population, used for initialization."""
+        population = np.array([self.sample_gene() for i in range(self.population_size)])
+        fitness_values, best_fitness, best_gene = self.population_fitness(population)
+        return population, fitness_values, best_fitness, best_gene
+
+    def sample_gene(self):
+        gene = np.arange(self.N + 2*self.k)
+        np.random.shuffle(gene)
+        return gene
+
+
+'''def create_travel_list(gene, k, N):
     first_start = False  # says if we have found the first start position
     travel_list = []
     goal_list = []
@@ -70,7 +285,7 @@ def fitness(gene, k, N):
         if cost > max_cost:
             max_cost = cost
 
-    return max_cost
+    return max_cost'''
 
 def point_distances(points, graph):
     N = len(points)
@@ -206,9 +421,14 @@ D_sg = np.load('D_sg.npy')
 
 N = 10# number of pickup points
 k = 3 # number of robots
-gene = np.arange(N + 2*k)
-np.random.shuffle(gene)
-test=fitness(gene,k,N)
+pop_size = 50
+generations = 50
+#gene = np.arange(N + 2*k)
+#np.random.shuffle(gene)
+#test=fitness(gene,k,N)
+
+vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size)
+vrp_ga.genetic_algorithm(generations)
 
 time_step=0
 start = False
