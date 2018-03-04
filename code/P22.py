@@ -18,6 +18,8 @@ def set_bg():
     '''set boundaries'''
     pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
     '''set start and goal positions'''
+    for edge in pg_edges:
+        pg.draw.line(screen,(0,0,255),edge[0],edge[1])
 
 
 
@@ -74,7 +76,9 @@ g.build(vg_obstacles)
 pg_edges=[]
 
 for edge in g.visgraph.edges:
-    pg_edges.append(list_to_pygame(edge))
+    p1=[edge.p1.x,edge.p1.y]
+    p2=[edge.p2.x,edge.p2.y]
+    pg_edges.append(list_to_pygame([p1,p2]))
 
 
 
