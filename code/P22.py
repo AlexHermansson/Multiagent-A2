@@ -363,6 +363,22 @@ def to_np(point):
     y = point.y
     return np.array([x, y])
 
+
+def path_decoder(paths):
+    travel_lists = []
+    for path in paths:
+        point_list = []
+        for elem in path:
+            if elem < k:
+                point_list.append(start_positions[elem])
+            elif elem >= k and elem < N + k:
+                point_list.append(points_of_interest[elem - k])
+            else:
+                point_list.append(goal_positions[elem - (N + k)])
+
+        travel_lists.append(point_list)
+    return travel_lists
+
 def list_to_pygame(list_of_points):
     pg_list_of_points=[]
     for point in list_of_points:
@@ -479,6 +495,27 @@ paths=vrp_ga.create_travel_list(gene)
 time_step=0
 start = False
 done = False
+
+travel_list = path_decoder(paths)
+
+
+def real_travel_list(travel_list):
+
+    real_travel_list = []
+    for list in travel_list:
+
+        real_list = []
+        for i in range(1, len(list)):
+            p1 = vg.Point(list[i-1][0], list[i-1][1])
+            p2 = vg.Point(list[i][0], list[i][1])
+            shortest_path = g.shortest_path(p1, p2)
+            for point in shortest_path:
+                real_list.append(to_np(point))
+        real_travel_list.append(real_list)
+
+    return real_travel_list
+
+real_tl = real_travel_list(travel_list)
 
 
 while not done:
