@@ -11,14 +11,16 @@ import random
 
 class VRP_GA():
 
-    def __init__(self, N, k, D_pg, D_pp, D_sp, D_sg, population_size):
+    def __init__(self, N, k, D_pg, D_pp, D_sp, D_sg, population_size,lambd):
         self.N = N; self.k = k
         self.D_pg = D_pg; self.D_pp = D_pp
         self.D_sp = D_sp; self.D_sg = D_sg
         self.population_size = population_size
+        self.lambd = lambd
         self.population, self.fitness_values, self.best_score, self.best_gene = self.init_population()
         self.best_scores=np.array([self.best_score])
         self.generation_scores=np.array(([self.best_score]))
+
 
 
     def genetic_algorithm(self, generations=50, plot = False, epsilon = 0.01):
@@ -57,7 +59,7 @@ class VRP_GA():
 
         travel_list = self.create_travel_list(gene)
         max_cost = -np.inf
-
+        total_cost=0
         for path in travel_list:
             L = len(path)
             cost = 0
@@ -79,8 +81,11 @@ class VRP_GA():
 
             if cost > max_cost:
                 max_cost = cost
+            total_cost+=cost
 
-        return max_cost
+        loss=total_cost+self.lambd*max_cost
+
+        return loss
 
     def create_travel_list(self, gene):
         first_start = False  # says if we have found the first start position
@@ -393,8 +398,44 @@ def set_bg():
     '''set boundaries'''
     pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
     '''set start and goal positions'''
-    for edge in pg_edges:
-        pg.draw.line(screen,(0,0,255),edge[0],edge[1])
+    for i,tl in enumerate(real_tl):
+        pg.draw.circle(screen,cols[i],to_pygame(tl[0]),4)
+        for j in range(1,len(tl)):
+            if j==len(tl)-1:
+                pg.draw.circle(screen,cols[i],to_pygame(tl[j]),4,1)
+                pg.draw.line(screen,cols[i],to_pygame(tl[j-1]),to_pygame(tl[j]))
+            else:
+                pg.draw.circle(screen, cols[i], to_pygame(tl[j]), 2, 1)
+                pg.draw.line(screen, cols[i],to_pygame(tl[j-1]),to_pygame(tl[j]))
+    for point in points_of_interest:
+        pg.draw.circle(screen,(0,0,0),to_pygame(point),4,1)
+
+
+def colors(n):
+    #col=list(itertools.permutations([255,0,100,225],3))
+    red=(255,0,0)
+    orange=(255,100,0)
+    green=(0,255,0)
+    light_blue=(0,255,255)
+    blue=(0,0,255)
+    purple=(100,0,255)
+    pink=(225,0,255)
+    col=[red,orange,green,light_blue,blue,purple,pink]
+    '''ret = []
+    r =255# int(random.random() * 256)
+    g =0# int(random.random() * 256)
+    b =255# int(random.random() * 256)
+    step = 256 / n
+    for i in range(n):
+        r += step - int(random.random() * step)
+        g += step - int(random.random() * step)
+        b += step - int(random.random() * step)
+        r = int(r) % 256
+        g = int(g) % 256
+        b = int(b) % 256
+        ret.append(random.choice(col))'''
+
+    return col
 
 
 
@@ -432,6 +473,8 @@ ehicle_omega_max = data["vehicle_omega_max"]
 vehicle_phi_max = data["vehicle_phi_max"]
 vehicle_t = data["vehicle_t"]
 vehicle_v_max = data["vehicle_v_max"]
+
+cols=colors(6)
 
 '''set pygame obstacles anf bounding polygon'''
 pg_obstacles=[]
@@ -479,19 +522,24 @@ k = len(start_positions)
 #k = 3 # number of robots
 pop_size = 500
 generations = 100
+lambd=1
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
 #test=fitness(gene,k,N)
 
-vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size)
-'''vrp_ga.genetic_algorithm(generations,True, 0.01)
+vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd=lambd)
+vrp_ga.genetic_algorithm(generations,True, 0.01)
 plt.plot(vrp_ga.best_scores)
 plt.plot(vrp_ga.generation_scores)
-plt.show()'''
+plt.show()
 
-#np.savetxt('bestgene.txt',vrp_ga.best_gene,fmt='%i')
-gene=np.loadtxt('bestgene.txt',dtype=int)
+
+
+np.savetxt('bestgene.txt',vrp_ga.best_gene,fmt='%i')
+#gene=np.loadtxt('bestgene_max_lenght.txt',dtype=int)
+gene=vrp_ga.best_gene
 paths=vrp_ga.create_travel_list(gene)
+
 time_step=0
 start = False
 done = False
