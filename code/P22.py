@@ -130,7 +130,7 @@ class VRP_GA():
 
         elif selection_rule == 'tournament':
             # returns the best gene of a subset of the input population
-            batch_size = int(self.population_size / 15)
+            batch_size = int(self.population_size / 10)
             #batch_size = min(self.population_size, batch_size)
             batch_index = random.sample(range(self.population_size), batch_size)
             population_batch = self.population[batch_index]
@@ -427,7 +427,7 @@ D_sg = np.load('D_sg.npy')
 
 N = 10# number of pickup points
 k = 3 # number of robots
-pop_size = 50
+pop_size = 500
 generations = 50
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
