@@ -121,7 +121,7 @@ class VRP_GA():
 
 
 
-    def gene_selection(self, selection_rule='tournament'):
+    def gene_selection(self, selection_rule='tournament',batch_size=None):
         """Takes a population as input, outputs a random gene."""
 
         if selection_rule == 'random':
@@ -130,7 +130,8 @@ class VRP_GA():
 
         elif selection_rule == 'tournament':
             # returns the best gene of a subset of the input population
-            batch_size = int(self.population_size / 10)
+            if not batch_size:
+                batch_size = int(self.population_size/100)
             #batch_size = min(self.population_size, batch_size)
             batch_index = random.sample(range(self.population_size), batch_size)
             population_batch = self.population[batch_index]
@@ -194,6 +195,35 @@ class VRP_GA():
 
 
         return child1, child2
+
+    def crossover2(self, x, y):
+        """Order 1 cross over reproduction."""
+
+        cut = np.random.randint(0,x.size)
+
+        chromosome1 = x[:cut]
+        child1 = -np.ones(x.shape,dtype=int)
+        child1[:cut] = chromosome1
+
+        for elem in y:
+            if elem not in chromosome1:
+                i = np.where(child1 == -1)[0][0]
+                child1[i] = elem
+
+        chromosome2 = y[:cut]
+        child2 = -np.ones(x.shape,dtype=int)
+        child2[:cut] = chromosome2
+
+        for elem in x:
+            if elem not in chromosome2:
+                i = np.where(child2 == -1)[0][0]
+                child2[i] = elem
+
+        if np.array_equal(child1,child2):
+            self.mutate(child2)
+
+        return child1, child2
+
 
 
     '''def distance(self, p1, p2, measure='euclidean'):
@@ -429,20 +459,23 @@ D_sg = np.load('D_sg.npy')
 N = len(points_of_interest)
 k = len(start_positions)
 
-#N = 10# number of pickup points
+#N = 5# number of pickup points
 #k = 3 # number of robots
-pop_size = 100
-generations = 20
+pop_size = 500
+generations = 100
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
 #test=fitness(gene,k,N)
 
 vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size)
-vrp_ga.genetic_algorithm(generations,True, 0.1)
+'''vrp_ga.genetic_algorithm(generations,True, 0.01)
+plt.plot(vrp_ga.best_scores)
+plt.plot(vrp_ga.generation_scores)
+plt.show()'''
 
-
-
-
+#np.savetxt('bestgene.txt',vrp_ga.best_gene,fmt='%i')
+gene=np.loadtxt('bestgene.txt',dtype=int)
+paths=vrp_ga.create_travel_list(gene)
 time_step=0
 start = False
 done = False
