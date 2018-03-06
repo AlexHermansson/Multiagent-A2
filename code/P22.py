@@ -172,8 +172,8 @@ class VRP_GA():
     def new_population(self, epsilon):
         new_population = np.zeros((self.population_size, self.N + self.k), dtype=int)
         for j in range(self.population_size):
-            x = self.gene_selection(batch_size=5)  # parents x and y
-            y = self.gene_selection(batch_size=5)
+            x = self.gene_selection()  # parents x and y
+            y = self.gene_selection()
             child1, child2 = self.crossover(x, y)
             if np.random.rand() < epsilon:
                 self.mutate(child1)
