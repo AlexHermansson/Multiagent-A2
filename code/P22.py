@@ -36,10 +36,27 @@ class VRP_GA():
             if best_score < self.best_score:
                 self.best_score = best_score
                 self.best_gene = best_gene
+
+            self.survival_selection()
             if plot:
                 self.best_scores=np.append(self.best_scores,self.best_score)
                 self.generation_scores=np.append(self.generation_scores,best_score)
 
+    def survival_selection(self):
+        '''selection of survivals:
+            To mantain diversity, we remove all the genes with the fitness equal to the best one
+        '''
+        first=True
+        for i,value in enumerate(self.fitness_values):
+            if value==self.best_score:
+                if first:#the firts gene encountered with the best fitness is kept
+                    first=False
+                else: #we sample a new random gene to replace the duplicate
+                    self.population[i]=self.sample_gene()
+                    self.fitness_values[i]=self.fitness(self.population[i])
+                    if self.fitness_values[i]<self.best_score:
+                        self.best_score=self.fitness_values[i]
+                        self.best_gene=self.population[i]
 
     def population_fitness(self, population):
         """Calculates the fitness of a population"""
@@ -517,8 +534,8 @@ k = len(start_positions)
 
 #N = 5# number of pickup points
 #k = 3 # number of robots
-pop_size = 2000
-generations = 60
+pop_size = 1000
+generations = 150
 lambd=6
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
