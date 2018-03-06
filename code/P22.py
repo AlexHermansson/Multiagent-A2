@@ -57,22 +57,6 @@ class VRP_GA():
             self.population=np.append(self.population,random_population,axis=0)
 
 
-    def survival_selection(self):
-        '''selection of survivals:
-            To mantain diversity, we remove all the genes with the fitness equal to the best one
-        '''
-        first=True
-        for i,value in enumerate(self.fitness_values):
-            if np.isclose(value,self.best_score):
-                if first:#the firts gene encountered with the best fitness is kept
-                    first=False
-                else: #we sample a new random gene to replace the duplicate
-                    self.population[i]=self.sample_gene()
-                    self.fitness_values[i]=self.fitness(self.population[i])
-                    if self.fitness_values[i]<self.best_score:
-                        self.best_score=self.fitness_values[i]
-                        self.best_gene=self.population[i]
-
     def population_fitness(self, population):
         """Calculates the fitness of a population"""
         fitness_values = np.zeros(self.population_size)
@@ -171,8 +155,11 @@ class VRP_GA():
             batch_index = random.sample(range(self.population_size), batch_size)
             population_batch = self.population[batch_index]
             fitness_batch = self.fitness_values[batch_index]
-            best_index = np.argmin(fitness_batch)
-            return population_batch[best_index]
+            #p_vals_wrong=fitness_batch/np.sum(fitness_batch)
+            p_vals=(1/fitness_batch)/np.sum(1/fitness_batch)
+            index=np.random.choice(np.arange(batch_size),p=p_vals)
+            #best_index = np.argmin(fitness_batch)
+            return population_batch[index]
 
         else:
             raise ValueError('Not a supported selection rule.')
@@ -216,7 +203,10 @@ class VRP_GA():
 
         for elem in y:
             if elem not in chromosome1:
+                #try:
                 i = np.where(child1 == -1)[0][0]
+                #except:
+                a=0
                 child1[i] = elem
 
         chromosome2 = y[c1:c2]
@@ -549,8 +539,8 @@ k = len(start_positions)
 
 #N = 5# number of pickup points
 #k = 3 # number of robots
-pop_size = 1000
-generations = 120
+pop_size = 2000
+generations = 150
 lambd=6
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
