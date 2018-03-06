@@ -155,11 +155,8 @@ class VRP_GA():
             batch_index = random.sample(range(self.population_size), batch_size)
             population_batch = self.population[batch_index]
             fitness_batch = self.fitness_values[batch_index]
-            #p_vals_wrong=fitness_batch/np.sum(fitness_batch)
-            p_vals=(1/fitness_batch)/np.sum(1/fitness_batch)
-            index=np.random.choice(np.arange(batch_size),p=p_vals)
-            #best_index = np.argmin(fitness_batch)
-            return population_batch[index]
+            best_index = np.argmin(fitness_batch)
+            return population_batch[best_index]
 
         else:
             raise ValueError('Not a supported selection rule.')
@@ -540,7 +537,7 @@ k = len(start_positions)
 #N = 5# number of pickup points
 #k = 3 # number of robots
 pop_size = 2000
-generations = 150
+generations = 100
 lambd=6
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
