@@ -11,15 +11,17 @@ import random
 
 class VRP_GA():
 
-    def __init__(self, N, k, D_pg, D_pp, D_sp, D_sg, population_size,lambd):
+    def __init__(self, N, k, D_pg, D_pp, D_sp, D_sg, population_size,lambd,goal_positions):
         self.N = N; self.k = k
         self.D_pg = D_pg; self.D_pp = D_pp
         self.D_sp = D_sp; self.D_sg = D_sg
         self.population_size = population_size
         self.lambd = lambd
+        self.goal_positions = goal_positions
         self.population, self.fitness_values, self.best_score, self.best_gene = self.init_population()
         self.best_scores=np.array([self.best_score])
         self.generation_scores=np.array(([self.best_score]))
+
 
 
 
@@ -63,21 +65,21 @@ class VRP_GA():
         for path in travel_list:
             L = len(path)
             cost = 0
-            for i in range(1, L):
+            for i in range(L):
 
-                if i == 1:
+                if i == 0:
                     # if only start and goal in the path
-                    if i == L - 1:
-                        cost += D_sg[path[i - 1], path[i] - (self.k + self.N)]
+                    if i == L-1:
+                        cost += D_sg[path[i], path[i]]
                     else:
-                        cost += D_sp[path[i - 1]][path[i] - self.k]
+                        cost += D_sp[path[i]][path[i+1] - self.k]
 
                 else:
 
                     if i == L - 1:
-                        cost += D_pg[path[i] - (self.k + self.N), path[i - 1] - self.k]
+                        cost += D_pg[path[0], path[i] - self.k]
                     else:
-                        cost += D_pp[path[i - 1] - self.k, path[i] - self.k]
+                        cost += D_pp[path[i] - self.k, path[i+1] - self.k]
 
             if cost > max_cost:
                 max_cost = cost
@@ -104,10 +106,6 @@ class VRP_GA():
                     travel_list.append(path)
                     path = np.array([elem])
 
-            # if a goal
-            elif elem >= self.k + self.N:
-                goal_list.append(elem)
-
             # if a pickup point
             else:
                 if not first_start:
@@ -115,12 +113,12 @@ class VRP_GA():
                 else:
                     path = np.append(path, elem)
 
-        if pos_list.size > 0:
+        if pos_list.size > 0: #if we had pickup before the first start point in the gene
             path = np.append(path, pos_list)
         travel_list.append(path)
 
-        for i, goal in enumerate(goal_list):
-            travel_list[i] = np.append(travel_list[i], goal)
+        #for i in range(len(travel_list)):
+            #travel_list[i] = np.append(travel_list[i], self.goal_positions[travel_list[i][0]])
 
         return travel_list
 
@@ -148,7 +146,7 @@ class VRP_GA():
             raise ValueError('Not a supported selection rule.')
 
     def new_population(self, epsilon):
-        new_population = np.zeros((self.population_size, self.N + (2 * self.k)), dtype=int)
+        new_population = np.zeros((self.population_size, self.N + self.k), dtype=int)
         for j in range(self.population_size):
             x = self.gene_selection()  # parents x and y
             y = self.gene_selection()
@@ -256,7 +254,7 @@ class VRP_GA():
         return population, fitness_values, best_fitness, best_gene
 
     def sample_gene(self):
-        gene = np.arange(self.N + 2*self.k)
+        gene = np.arange(self.N + self.k)
         np.random.shuffle(gene)
         return gene
 
@@ -376,11 +374,10 @@ def path_decoder(paths):
         for elem in path:
             if elem < k:
                 point_list.append(start_positions[elem])
-            elif elem >= k and elem < N + k:
+            elif elem >= k:
                 point_list.append(points_of_interest[elem - k])
-            else:
-                point_list.append(goal_positions[elem - (N + k)])
 
+        point_list.append(goal_positions[path[0]])
         travel_lists.append(point_list)
     return travel_lists
 
@@ -520,18 +517,19 @@ k = len(start_positions)
 
 #N = 5# number of pickup points
 #k = 3 # number of robots
-pop_size = 500
-generations = 100
-lambd=1
+pop_size = 2000
+generations = 60
+lambd=6
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
 #test=fitness(gene,k,N)
 
-vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd=lambd)
+vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
 vrp_ga.genetic_algorithm(generations,True, 0.01)
 plt.plot(vrp_ga.best_scores)
 plt.plot(vrp_ga.generation_scores)
 plt.show()
+print(vrp_ga.best_score)
 
 
 
