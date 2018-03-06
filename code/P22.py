@@ -32,15 +32,22 @@ class VRP_GA():
         for generation in range(generations):
 
             self.population = self.new_population(epsilon)
+            self.check_uniqe()
             self.fitness_values, best_score, best_gene = self.population_fitness(self.population)
             if best_score < self.best_score:
                 self.best_score = best_score
                 self.best_gene = best_gene
-
-            self.survival_selection()
             if plot:
                 self.best_scores=np.append(self.best_scores,self.best_score)
                 self.generation_scores=np.append(self.generation_scores,best_score)
+
+    def check_uniqe(self):
+        '''we remove all the duplicates and we add random genes instead'''
+        self.population=np.unique(self.population,axis=0)
+        if self.population.shape[0]< self.population_size:
+            random_population = np.array([self.sample_gene() for i in range(self.population_size-self.population.shape[0])])
+            self.population=np.append(self.population,random_population,axis=0)
+
 
     def survival_selection(self):
         '''selection of survivals:
@@ -48,7 +55,7 @@ class VRP_GA():
         '''
         first=True
         for i,value in enumerate(self.fitness_values):
-            if value==self.best_score:
+            if np.isclose(value,self.best_score):
                 if first:#the firts gene encountered with the best fitness is kept
                     first=False
                 else: #we sample a new random gene to replace the duplicate
@@ -165,8 +172,8 @@ class VRP_GA():
     def new_population(self, epsilon):
         new_population = np.zeros((self.population_size, self.N + self.k), dtype=int)
         for j in range(self.population_size):
-            x = self.gene_selection()  # parents x and y
-            y = self.gene_selection()
+            x = self.gene_selection(batch_size=5)  # parents x and y
+            y = self.gene_selection(batch_size=5)
             child1, child2 = self.crossover(x, y)
             if np.random.rand() < epsilon:
                 self.mutate(child1)
@@ -535,7 +542,7 @@ k = len(start_positions)
 #N = 5# number of pickup points
 #k = 3 # number of robots
 pop_size = 1000
-generations = 150
+generations = 120
 lambd=6
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
