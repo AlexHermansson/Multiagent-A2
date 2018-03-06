@@ -25,7 +25,7 @@ class VRP_GA():
 
 
 
-    def genetic_algorithm(self, generations=50, plot = False, epsilon = 0.01):
+    def genetic_algorithm(self, generations=50, plot = False, epsilon = 0.01, percent_plot = True):
         """Takes a population with k genes and a fitness function which evaluates
         the fitness of an gene. epsilon is the mutation rate"""
 
@@ -41,6 +41,14 @@ class VRP_GA():
             if plot:
                 self.best_scores=np.append(self.best_scores,self.best_score)
                 self.generation_scores=np.append(self.generation_scores,best_score)
+
+            if percent_plot:
+                self.plot_percentage(generation, generations)
+
+    def plot_percentage(self, generation, generations):
+        """Function to plot the percentage of the iterations"""
+        if (generation*100/generations)%10 == 0:
+            print(int((generation/generations)*100 + 10), '%')
 
     def survival_selection(self):
         '''selection of survivals:
@@ -535,7 +543,7 @@ k = len(start_positions)
 #N = 5# number of pickup points
 #k = 3 # number of robots
 pop_size = 1000
-generations = 150
+generations = 10
 lambd=6
 #gene = np.arange(N + 2*k)
 #np.random.shuffle(gene)
