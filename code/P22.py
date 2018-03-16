@@ -25,7 +25,6 @@ class VRP_GA():
         self.count=0
 
 
-
     def genetic_algorithm(self, generations=50, plot = False, epsilon = 0.01, percent_plot = True):
         """Takes a population with k genes and a fitness function which evaluates
         the fitness of an gene. epsilon is the mutation rate"""
@@ -33,14 +32,22 @@ class VRP_GA():
         for generation in range(generations):
 
             self.population = self.new_population(epsilon)
-            self.check_unique()
+
             self.fitness_values, best_score, best_gene = self.population_fitness(self.population)
             if best_score < self.best_score:
                 self.best_score = best_score
                 self.best_gene = best_gene
-            if plot:
-                self.best_scores=np.append(self.best_scores,self.best_score)
-                self.generation_scores=np.append(self.generation_scores,best_score)
+            if self.generation_scores[-1]==best_score:
+                self.count+=1
+            else:
+                self.count=0
+            self.best_scores=np.append(self.best_scores,self.best_score)
+            self.generation_scores=np.append(self.generation_scores,best_score)
+
+            if self.count>10:
+                self.check_unique()
+                self.count=0
+
 
             if percent_plot:
                 self.plot_percentage(generation, generations)
@@ -172,8 +179,8 @@ class VRP_GA():
     def new_population(self, epsilon):
         new_population = np.zeros((self.population_size, self.N + self.k), dtype=int)
         for j in range(self.population_size):
-            x = self.gene_selection()  # parents x and y
-            y = self.gene_selection()
+            x = self.gene_selection(batch_size=4)  # parents x and y
+            y = self.gene_selection(batch_size=4)
             child1, child2 = self.crossover(x, y)
             if np.random.rand() < epsilon:
                 self.mutate(child1)
@@ -464,9 +471,9 @@ D_sg = np.load('D_sg.npy')
 
 N = len(points_of_interest) # number of pickup points
 k = len(start_positions) # number of robots
-pop_size = 600
-generations = 250
-n_trials=100
+pop_size = 2000
+generations = 200
+n_trials=20
 #N = 5# number of pickup points
 #k = 3 # number of robots
 lambd=6
@@ -474,9 +481,9 @@ lambd=6
 for i in range(n_trials):
     vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
     vrp_ga.genetic_algorithm(generations,True, 0.01)
-    '''plt.plot(vrp_ga.best_scores)
+    plt.plot(vrp_ga.best_scores)
     plt.plot(vrp_ga.generation_scores)
-    plt.show()'''
+    plt.show()
     print(vrp_ga.best_score)
     if i==0:
         best_gene=vrp_ga.best_gene
@@ -485,7 +492,7 @@ for i in range(n_trials):
         if vrp_ga.best_score<best_score:
             best_gene = vrp_ga.best_gene
             best_score = vrp_ga.best_score
-
+    print(best_score)
 
 
 np.savetxt('bestgene_547.txt',best_gene,fmt='%i')
