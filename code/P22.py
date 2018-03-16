@@ -22,7 +22,7 @@ class VRP_GA():
         self.population, self.fitness_values, self.best_score, self.best_gene = self.init_population()
         self.best_scores=np.array([self.best_score])
         self.generation_scores=np.array(([self.best_score]))
-
+        self.count=0
 
 
 
@@ -44,6 +44,14 @@ class VRP_GA():
 
             if percent_plot:
                 self.plot_percentage(generation, generations)
+
+    def remove_best(self):
+        indices=np.argsort(self.fitness_values)
+        sorted_population=self.population[indices]
+        for i in range(int(self.population_size*0.50)):
+            sorted_population[i]=self.sample_gene()
+        self.population=sorted_population
+
 
     def plot_percentage(self, generation, generations):
         """Function to plot the percentage of the iterations"""
@@ -456,26 +464,33 @@ D_sg = np.load('D_sg.npy')
 
 N = len(points_of_interest) # number of pickup points
 k = len(start_positions) # number of robots
-pop_size = 200
-generations = 100
-
+pop_size = 600
+generations = 250
+n_trials=100
 #N = 5# number of pickup points
 #k = 3 # number of robots
 lambd=6
 
-vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
-vrp_ga.genetic_algorithm(generations,True, 0.01)
-plt.plot(vrp_ga.best_scores)
-plt.plot(vrp_ga.generation_scores)
-plt.show()
-print(vrp_ga.best_score)
+for i in range(n_trials):
+    vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
+    vrp_ga.genetic_algorithm(generations,True, 0.01)
+    '''plt.plot(vrp_ga.best_scores)
+    plt.plot(vrp_ga.generation_scores)
+    plt.show()'''
+    print(vrp_ga.best_score)
+    if i==0:
+        best_gene=vrp_ga.best_gene
+        best_score=vrp_ga.best_score
+    else:
+        if vrp_ga.best_score<best_score:
+            best_gene = vrp_ga.best_gene
+            best_score = vrp_ga.best_score
 
 
 
-#np.savetxt('bestgene_547.txt',vrp_ga.best_gene,fmt='%i')
+np.savetxt('bestgene_547.txt',best_gene,fmt='%i')
 #gene=np.loadtxt('bestgene_max_lenght.txt',dtype=int)
-gene=vrp_ga.best_gene
-paths=vrp_ga.create_travel_list(gene)
+paths=vrp_ga.create_travel_list(best_gene)
 
 time_step=0
 start = False
