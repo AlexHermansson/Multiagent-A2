@@ -22,8 +22,6 @@ class VRP_GA():
         self.population, self.fitness_values, self.best_score, self.best_gene = self.init_population()
         self.best_scores=np.array([self.best_score])
         self.generation_scores=np.array(([self.best_score]))
-        self.count=0
-
 
     def genetic_algorithm(self, generations=50, plot = False, epsilon = 0.01, percent_plot = True):
         """Takes a population with k genes and a fitness function which evaluates
@@ -478,6 +476,7 @@ n_trials=20
 #k = 3 # number of robots
 lambd=6
 
+
 for i in range(n_trials):
     vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
     vrp_ga.genetic_algorithm(generations,True, 0.01)
@@ -495,7 +494,7 @@ for i in range(n_trials):
     print(best_score)
 
 
-np.savetxt('bestgene_547.txt',best_gene,fmt='%i')
+np.savetxt('bestgene.txt',best_gene,fmt='%i')
 #gene=np.loadtxt('bestgene_max_lenght.txt',dtype=int)
 paths=vrp_ga.create_travel_list(best_gene)
 
