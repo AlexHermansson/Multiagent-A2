@@ -103,7 +103,7 @@ class VRP_GA():
 
         loss=total_cost+self.lambd*max_cost
 
-        return loss
+        return max_cost#loss
 
     def create_travel_list(self, gene):
         first_start = False  # says if we have found the first start position
@@ -530,10 +530,14 @@ D_pg = np.load('D_pg.npy')
 D_sg = np.load('D_sg.npy')
 
 
+
 N = len(points_of_interest) # number of pickup points
 k = len(start_positions) # number of robots
 pop_size = 2000
 generations = 150
+
+#N = 5# number of pickup points
+#k = 3 # number of robots
 lambd=6
 
 vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
