@@ -32,7 +32,7 @@ class VRP_GA():
         for generation in range(generations):
 
             self.population = self.new_population(epsilon)
-            self.check_uniqe()
+            self.check_unique()
             self.fitness_values, best_score, best_gene = self.population_fitness(self.population)
             if best_score < self.best_score:
                 self.best_score = best_score
@@ -47,9 +47,9 @@ class VRP_GA():
     def plot_percentage(self, generation, generations):
         """Function to plot the percentage of the iterations"""
         if (generation*100/generations)%10 == 0:
-            print(int((generation/generations)*100 + 10), '%')
+            print(int((generation/generations)*100), '%')
 
-    def check_uniqe(self):
+    def check_unique(self):
         '''we remove all the duplicates and we add random genes instead'''
         self.population=np.unique(self.population,axis=0)
         if self.population.shape[0]< self.population_size:
@@ -151,15 +151,11 @@ class VRP_GA():
             # returns the best gene of a subset of the input population
             if not batch_size:
                 batch_size = int(self.population_size/100)
-            #batch_size = min(self.population_size, batch_size)
             batch_index = random.sample(range(self.population_size), batch_size)
             population_batch = self.population[batch_index]
             fitness_batch = self.fitness_values[batch_index]
-            #p_vals_wrong=fitness_batch/np.sum(fitness_batch)
-            p_vals=(1/fitness_batch)/np.sum(1/fitness_batch)
-            index=np.random.choice(np.arange(batch_size),p=p_vals)
-            #best_index = np.argmin(fitness_batch)
-            return population_batch[index]
+            best_index = np.argmin(fitness_batch)
+            return population_batch[best_index]
 
         else:
             raise ValueError('Not a supported selection rule.')
@@ -534,17 +530,11 @@ D_pg = np.load('D_pg.npy')
 D_sg = np.load('D_sg.npy')
 
 
-N = len(points_of_interest)
-k = len(start_positions)
-
-#N = 5# number of pickup points
-#k = 3 # number of robots
+N = len(points_of_interest) # number of pickup points
+k = len(start_positions) # number of robots
 pop_size = 2000
 generations = 150
 lambd=6
-#gene = np.arange(N + 2*k)
-#np.random.shuffle(gene)
-#test=fitness(gene,k,N)
 
 vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
 vrp_ga.genetic_algorithm(generations,True, 0.01)
@@ -555,7 +545,7 @@ print(vrp_ga.best_score)
 
 
 
-np.savetxt('bestgene.txt',vrp_ga.best_gene,fmt='%i')
+np.savetxt('bestgene_547.txt',vrp_ga.best_gene,fmt='%i')
 #gene=np.loadtxt('bestgene_max_lenght.txt',dtype=int)
 gene=vrp_ga.best_gene
 paths=vrp_ga.create_travel_list(gene)
