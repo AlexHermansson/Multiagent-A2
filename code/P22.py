@@ -5,6 +5,7 @@ import pygame as pg
 import matplotlib.pyplot as plt
 import time
 import random
+from shapely import geometry
 
 #np.random.seed(100)
 
@@ -174,18 +175,6 @@ class VRP_GA():
             new_population[self.population_size - j - 1] = child2
 
         return new_population
-    '''def best_gene(self, population):
-        """Returns the gene with highest fitness in a population."""
-
-        best_fitness = np.inf
-        for gene in population:
-            fitness = self.fitness(gene)
-            if fitness < best_fitness:
-                best_fitness = fitness
-                best_gene = gene
-
-        self.best_score = best_fitness
-        return best_gene'''
 
     def crossover(self, x, y):
         """Order 1 cross over reproduction."""
@@ -245,20 +234,6 @@ class VRP_GA():
 
         return child1, child2
 
-
-
-    '''def distance(self, p1, p2, measure='euclidean'):
-        """Distance between points p1 and p2 with respect to some metric."""
-
-        if measure == 'euclidean':
-            return np.linalg.norm(p1 - p2)
-
-        elif measure == 'visibility graph':
-            pass
-
-        else:
-            raise ValueError('Not a supported measure.')'''
-
     def mutate(self, gene):
         """Mutate an gene, swap two of the 'nodes'."""
 
@@ -277,72 +252,7 @@ class VRP_GA():
         return gene
 
 
-'''def create_travel_list(gene, k, N):
-    first_start = False  # says if we have found the first start position
-    travel_list = []
-    goal_list = []
-    pos_list = np.array([],dtype=int)
-
-    for i, elem in enumerate(gene):
-
-        # if a start position
-        if elem < k:
-            if not first_start:
-                path = np.array([elem])
-                first_start = True
-            else:
-                travel_list.append(path)
-                path = np.array([elem])
-
-        # if a goal
-        elif elem >= k + N:
-            goal_list.append(elem)
-
-        # if a pickup point
-        else:
-            if not first_start:
-                pos_list = np.append(pos_list, elem)
-            else:
-                path = np.append(path, elem)
-
-    if pos_list.size > 0:
-        path = np.append(path, pos_list)
-    travel_list.append(path)
-
-    for i, goal in enumerate(goal_list):
-        travel_list[i] = np.append(travel_list[i], goal)
-
-    return travel_list
-
-
-def fitness(gene, k, N):
-
-    travel_list = create_travel_list(gene, k, N)
-    max_cost = -np.inf
-
-    for path in travel_list:
-        L = len(path)
-        cost = 0
-        for i in range(1, L):
-
-            if i == 1:
-                # if only start and goal in the path
-                if i == L-1:
-                    cost += D_sg[path[i-1], path[i]-(k+N)]
-                else:
-                    cost += D_sp[path[i-1]][path[i]-k]
-
-            else:
-
-                if i == L-1:
-                    cost += D_pg[path[i]-(k+N), path[i-1]-k]
-                else:
-                    cost += D_pp[path[i-1]-k, path[i]-k]
-
-        if cost > max_cost:
-            max_cost = cost
-
-    return max_cost'''
+'''Help functions for the main program'''
 
 def point_distances(points, graph):
     N = len(points)
@@ -384,7 +294,6 @@ def to_np(point):
     y = point.y
     return np.array([x, y])
 
-
 def path_decoder(paths):
     travel_lists = []
     for path in paths:
@@ -398,6 +307,24 @@ def path_decoder(paths):
         point_list.append(goal_positions[path[0]])
         travel_lists.append(point_list)
     return travel_lists
+
+def real_travel_list(travel_list):
+
+    real_travel_list = []
+    for list in travel_list:
+
+        real_list = []
+        for i in range(1, len(list)):
+            p1 = vg.Point(list[i-1][0], list[i-1][1])
+            p2 = vg.Point(list[i][0], list[i][1])
+            shortest_path = g.shortest_path(p1, p2)
+            for point in shortest_path:
+                real_list.append(to_np(point))
+        real_travel_list.append(real_list)
+
+    return real_travel_list
+
+'''Pygame functions for plotting'''
 
 def list_to_pygame(list_of_points):
     pg_list_of_points=[]
@@ -425,7 +352,6 @@ def set_bg():
     for point in points_of_interest:
         pg.draw.circle(screen,(0,0,0),to_pygame(point),4,1)
 
-
 def colors(n):
     #col=list(itertools.permutations([255,0,100,225],3))
     red=(255,0,0)
@@ -451,9 +377,6 @@ def colors(n):
         ret.append(random.choice(col))'''
 
     return col
-
-
-
 
 def to_pygame(coords):
     '''Convert coordinates into pygame coordinates'''
@@ -484,7 +407,7 @@ start_positions=np.array(data["start_positions"])
 vehicle_L = data["vehicle_L"]
 vehicle_a_max = data["vehicle_a_max"]
 vehicle_dt=data["vehicle_dt"]
-ehicle_omega_max = data["vehicle_omega_max"]
+vehicle_omega_max = data["vehicle_omega_max"]
 vehicle_phi_max = data["vehicle_phi_max"]
 vehicle_t = data["vehicle_t"]
 vehicle_v_max = data["vehicle_v_max"]
@@ -533,8 +456,8 @@ D_sg = np.load('D_sg.npy')
 
 N = len(points_of_interest) # number of pickup points
 k = len(start_positions) # number of robots
-pop_size = 2000
-generations = 150
+pop_size = 200
+generations = 100
 
 #N = 5# number of pickup points
 #k = 3 # number of robots
@@ -549,7 +472,7 @@ print(vrp_ga.best_score)
 
 
 
-np.savetxt('bestgene_547.txt',vrp_ga.best_gene,fmt='%i')
+#np.savetxt('bestgene_547.txt',vrp_ga.best_gene,fmt='%i')
 #gene=np.loadtxt('bestgene_max_lenght.txt',dtype=int)
 gene=vrp_ga.best_gene
 paths=vrp_ga.create_travel_list(gene)
@@ -559,25 +482,16 @@ start = False
 done = False
 
 travel_list = path_decoder(paths)
-
-
-def real_travel_list(travel_list):
-
-    real_travel_list = []
-    for list in travel_list:
-
-        real_list = []
-        for i in range(1, len(list)):
-            p1 = vg.Point(list[i-1][0], list[i-1][1])
-            p2 = vg.Point(list[i][0], list[i][1])
-            shortest_path = g.shortest_path(p1, p2)
-            for point in shortest_path:
-                real_list.append(to_np(point))
-        real_travel_list.append(real_list)
-
-    return real_travel_list
-
 real_tl = real_travel_list(travel_list)
+
+'''To find intersections for overlapping obstacles..'''
+'''red_line = geometry.LineString([[21, 16], [22.5, 8]])
+blue_line1 = geometry.LineString([[20, 12], [22, 13]])
+blue_line2 = geometry.LineString([[22, 10], [22, 13]])
+intersect_1 = red_line.intersection(blue_line1)
+point_1 = np.array(intersect_1.coords).reshape(-1)
+intersect_2 = red_line.intersection(blue_line2)
+point_2 = np.array(intersect_2.coords).reshape(-1)'''
 
 
 while not done:
