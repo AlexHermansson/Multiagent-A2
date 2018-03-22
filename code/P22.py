@@ -362,6 +362,8 @@ def set_bg():
             else:
                 pg.draw.circle(screen, cols[i], to_pygame(tl[j]), 2, 1)
                 pg.draw.line(screen, cols[i],to_pygame(tl[j-1]),to_pygame(tl[j]))
+    '''for edge in pg_edges:
+        pg.draw.line(screen,(0,255,0),edge[0],edge[1])'''
     for point in points_of_interest:
         pg.draw.circle(screen,(0,0,0),to_pygame(point),4,1)
 
@@ -475,9 +477,10 @@ n_trials=30
 #N = 5# number of pickup points
 #k = 3 # number of robots
 lambd=6
+vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
 
 
-for i in range(n_trials):
+'''for i in range(n_trials):
     vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
     vrp_ga.genetic_algorithm(generations,True, 0.01)
     plt.plot(vrp_ga.best_scores)
@@ -499,9 +502,8 @@ for i in range(n_trials):
     print('best score: ', best_score)
 
 
-
-np.savetxt('bestgene_44.76.txt',best_gene,fmt='%i')
-#gene=np.loadtxt('bestgene_max_lenght.txt',dtype=int)
+np.savetxt('bestgene.txt',best_gene,fmt='%i')'''
+best_gene=np.loadtxt('45_8.txt',dtype=int)
 paths=vrp_ga.create_travel_list(best_gene)
 
 time_step=0

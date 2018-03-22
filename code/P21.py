@@ -11,7 +11,7 @@ from shapely import geometry
 class Robot():
 
 
-    def __init__(self, position, goal_position, v_max, index, tau = 400):
+    def __init__(self, position, goal_position, v_max, index, tau = 4):
         self.p = position
         self.p_goal = goal_position
         self.v = np.zeros(2)
