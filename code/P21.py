@@ -7,12 +7,6 @@ import itertools
 from scipy.optimize import minimize
 from shapely import geometry
 
-class Line(object):
-    """A line in space."""
-    def __init__(self, p, n):
-        super(Line, self).__init__()
-        self.point = p
-        self.direction = n
 
 class Robot():
 
@@ -31,70 +25,6 @@ class Robot():
         self.set_v_pref()
         self.ORCA=[]
 
-    def halfplane_optimize(self, lines, optimal_point):
-
-        point = optimal_point
-        for i, line in enumerate(lines):
-            # If this half-plane already contains the current point, all is well.
-            if np.dot(point - line.point, line.direction) >= 0:
-                # assert False, point
-                continue
-
-            prev_lines = itertools.islice(lines, i)
-            left_dist, right_dist = self.line_halfplane_intersect(line, prev_lines)
-            if left_dist is None:
-                return np.array((None,None))
-            else:
-                point = self.point_line_project(line, optimal_point, left_dist, right_dist)
-        return point
-
-    def point_line_project(self, line, point, left_bound, right_bound):
-        """Project point onto the line segment defined by line, which is in
-        point-normal form, and the left and right bounds with respect to line's
-        anchor point."""
-        # print("left_bound=%s, right_bound=%s" % (left_bound, right_bound))
-        new_dir = np.array((line.direction[1],-line.direction[0]))
-        # print("new_dir=%s" % new_dir)
-        proj_len = np.dot(point - line.point, new_dir)
-        # print("proj_len=%s" % proj_len)
-        clamped_len = np.clip(proj_len, left_bound, right_bound)
-        # print("clamped_len=%s" % clamped_len)
-        return line.point + new_dir * clamped_len
-
-    def line_halfplane_intersect(self, line, other_lines):
-        left_dist = float("-inf")
-        right_dist = float("inf")
-        for prev_line in other_lines:
-            num1 = np.dot(prev_line.direction, line.point - prev_line.point)
-            den1 = np.linalg.det((line.direction, prev_line.direction))
-
-            num = num1
-            den = den1
-            if den == 0:
-                # The half-planes are parallel.
-                if num < 0:
-                    # The intersection of the half-planes is empty; there is no
-                    # solution.
-                    return None,None
-                else:
-                    # The *half-planes* intersect, but their lines don't cross, so
-                    # ignore.
-                    continue
-
-            # Signed offset of the point of intersection, relative to the line's
-            # anchor point, in units of the line's direction.
-            offset = num / den
-            if den > 0:
-                # Point of intersection is to the right.
-                right_dist = min((right_dist, offset))
-            else:
-                # Point of intersection is to the left.
-                left_dist = max((left_dist, offset))
-
-            if left_dist > right_dist:
-                # The interval is inconsistent, so the feasible region is empty.
-                return None,None
-        return left_dist, right_dist
 
     def move(self):
         """Update position"""
@@ -106,10 +36,10 @@ class Robot():
         """linear programming stuff"""
         ORCA = self.compute_ORCA(robots)
         if ORCA:
-            '''objective = lambda v: np.linalg.norm(v - self.v_pref)
+            objective = lambda v: np.linalg.norm(v - self.v_pref)
 
             constraint1 = lambda v, u, n: np.dot(v - (self.v_opt + 1/2 * u), n)
-            constraint2 = lambda v: self.v_max - np.linalg.norm(v)
+            constraint2 = lambda v: self.v_max-np.linalg.norm(v)
 
 
             constraints = ({'type':'ineq', 'fun':constraint2},)
@@ -127,16 +57,7 @@ class Robot():
                 self.v = res.x
             else:
                 a=0
-                self.v = np.zeros(2)'''
-            lines=[]
-            for o in ORCA:
-                line=Line(self.v_opt+0.5*o[0],o[1])
-                lines.append(line)
-            self.v=self.halfplane_optimize(lines,self.v_pref)
-            if not self.v.all():
-                self.v=np.zeros(2)
-            if np.linalg.norm(self.v)>self.v_max:
-                a=0
+                self.v = np.zeros(2)
 
 
 
@@ -376,12 +297,12 @@ while not done:
 
     for robot in robots:
         robot.select_vel(robots)
-        #robot.move()
+        robot.move()
 
-    for robot in robots:
+    '''for robot in robots:
         robot.move()
         if np.isclose(robot.p,robot.p_goal).all():
-            robots.remove(robot)
+            robots.remove(robot)'''
 
 
     set_bg()

@@ -98,7 +98,7 @@ plt.scatter(D[0], D[1],c='k')
 plt.axis([-4, 5, -4, 4])
 
 
-v = np.array([-0.5, 0.7])
+v = np.array([0.5, 0.5])
 
 plt.scatter(v[0], v[1], marker='*')
 
@@ -107,8 +107,8 @@ u_ = compute_u(p, v)
 if u_:
     u = u_[0]
     n = u_[1]
-    plt.arrow(v[0], v[1], u[0], u[1], color='r', head_width=0.05, head_length=0)
-    #plt.arrow(v[0]+u[0], v[1]+u[1], n[0], n[1], head_width=0.05, head_length=0.1)
+    plt.arrow(v[0], v[1], u[0], u[1], color='r', head_width=0.05, head_length=0.1)
+    plt.arrow(v[0]+u[0], v[1]+u[1], n[0], n[1], head_width=0.05, head_length=0.1)
     print(u)
 else:
     print('u is None')
