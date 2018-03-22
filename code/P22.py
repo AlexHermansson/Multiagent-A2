@@ -397,13 +397,13 @@ def to_pygame(coords):
 
 
 '''set pygame env'''
-pg.init()
+'''pg.init()
 infoObject = pg.display.Info()
 screen = pg.display.set_mode((infoObject.current_w, infoObject.current_h))
 width = infoObject.current_w
 height = infoObject.current_h
 background_colour = (255, 255, 255)
-screen.fill(background_colour)
+screen.fill(background_colour)'''
 
 '''import json data'''
 data = json.load(open('P22.json'))
@@ -428,7 +428,7 @@ vehicle_v_max = data["vehicle_v_max"]
 cols=colors(6)
 
 '''set pygame obstacles anf bounding polygon'''
-pg_obstacles=[]
+"""pg_obstacles=[]
 for obstacle in obstacles:
     pg_obstacles.append(list_to_pygame(obstacle))
 
@@ -448,7 +448,7 @@ pg_edges=[]
 for edge in g.visgraph.edges:
     p1=[edge.p1.x,edge.p1.y]
     p2=[edge.p2.x,edge.p2.y]
-    pg_edges.append(list_to_pygame([p1,p2]))
+    pg_edges.append(list_to_pygame([p1,p2]))"""
 
 
 #D_sp = set_distances(start_positions, points_of_interest, g)
@@ -470,8 +470,8 @@ D_sg = np.load('D_sg.npy')
 N = len(points_of_interest) # number of pickup points
 k = len(start_positions) # number of robots
 pop_size = 2000
-generations = 200
-n_trials=20
+generations = 250
+n_trials=30
 #N = 5# number of pickup points
 #k = 3 # number of robots
 lambd=6
@@ -482,6 +482,8 @@ for i in range(n_trials):
     vrp_ga.genetic_algorithm(generations,True, 0.01)
     plt.plot(vrp_ga.best_scores)
     plt.plot(vrp_ga.generation_scores)
+    plt.xlabel('epoch')
+    plt.ylabel('objective')
     plt.show()
     print(vrp_ga.best_score)
     if i==0:
@@ -491,10 +493,14 @@ for i in range(n_trials):
         if vrp_ga.best_score<best_score:
             best_gene = vrp_ga.best_gene
             best_score = vrp_ga.best_score
-    print(best_score)
+            np.savetxt('bestgene_44.76.txt', best_gene, fmt='%i')
+
+    print('trial: ', i+1)
+    print('best score: ', best_score)
 
 
-np.savetxt('bestgene.txt',best_gene,fmt='%i')
+
+np.savetxt('bestgene_44.76.txt',best_gene,fmt='%i')
 #gene=np.loadtxt('bestgene_max_lenght.txt',dtype=int)
 paths=vrp_ga.create_travel_list(best_gene)
 
@@ -502,8 +508,8 @@ time_step=0
 start = False
 done = False
 
-travel_list = path_decoder(paths)
-real_tl = real_travel_list(travel_list)
+#travel_list = path_decoder(paths)
+#real_tl = real_travel_list(travel_list)
 
 '''To find intersections for overlapping obstacles..'''
 '''red_line = geometry.LineString([[21, 16], [22.5, 8]])
@@ -515,7 +521,7 @@ intersect_2 = red_line.intersection(blue_line2)
 point_2 = np.array(intersect_2.coords).reshape(-1)'''
 
 
-while not done:
+'''while not done:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             done = True
@@ -528,4 +534,4 @@ while not done:
 
         set_bg()
         # set_data(total_time * 0.1)
-        pg.display.flip()
+        pg.display.flip()'''
