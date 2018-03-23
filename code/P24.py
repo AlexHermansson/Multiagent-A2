@@ -1,5 +1,6 @@
 import triangle as tr
 import triangle.plot as tr_plt
+from triangle import show_data
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -48,20 +49,26 @@ def poly_to_segments(bound_poly, obs):
     i=0
     segments=[]
     initial=i
-    for point in bound_poly:
+    for point in range(len(bound_poly)-1):
         segments.append(np.array((i,i+1)))
         i+=1
-    segments.append(np.array((i-1, initial)))
+    segments.append(np.array((i, initial)))
+    i+=1
 
     for obstacle in obs:
         initial=i
-        for point in obstacle:
+        for point in range(len(obstacle)-1):
             segments.append(np.array((i, i + 1)))
             i += 1
-        segments.append(np.array((i - 1, initial)))
+        segments.append(np.array((i, initial)))
+        i+=1
 
     return np.asarray(segments)
 
+def visualize_triangulation(t):
+    ax = plt.subplot()
+    tr_plt.plot(ax, **t)
+    plt.show()
 
 
 data = json.load(open('P24.json'))
@@ -94,14 +101,12 @@ spiral = tr.get_data('spiral')
 
 vertices = to_vertices(bounding_polygon, obstacles)
 holes = polygon_holes(obstacles)
+segments = poly_to_segments(bounding_polygon, obstacles)
 
 #plt.scatter(vertices[:,0], vertices[:,1])
 #plt.show()
 
-map_dict = {'vertices':vertices, 'holes':holes}
-t = tr.triangulate(map_dict)
+map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}
+t = tr.triangulate(map_dict, 'p')
 a = 0
-
-
-tr_plt.compare(plt, map_dict, t)
-plt.show()
+visualize_triangulation(t)
