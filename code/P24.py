@@ -142,7 +142,7 @@ def visible_triangles(point, sh_obst, radius, tri_list):
 data = json.load(open('P24.json'))
 
 bounding_polygon = data["bounding_polygon"]
-'''goal_positions=np.array(data["goal_positions"])
+goal_positions=np.array(data["goal_positions"])
 start_positions=np.array(data["start_positions"])
 points_of_interest = np.array(data['points_of_interest'])
 vehicle_L = data["vehicle_L"]
@@ -151,7 +151,7 @@ vehicle_omega_max = data["vehicle_omega_max"]
 vehicle_phi_max = data["vehicle_phi_max"]
 vehicle_t = data["vehicle_t"]
 vehicle_v_max = data["vehicle_v_max"]
-vehicle_dt=data["vehicle_dt"]'''
+vehicle_dt=data["vehicle_dt"]
 sensor_range=data["sensor_range"]
 
 #load obstacles
@@ -178,4 +178,18 @@ point = np.array([21,0])
 
 counter, triangles_list = visible_triangles(point, sh_obstacles, sensor_range, triangles)
 
-a = 0
+point_list=[]
+
+for pos in start_positions:
+    counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
+    point_list.append(Cluster(pos, counter, triangles_list))
+
+for pos in goal_positions:
+    counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
+    point_list.append(Cluster(pos, counter, triangles_list))
+
+a=0
+'''for obstacle in obstacles:
+    for point in obstacle:
+        counter, triangles_list=visible_triangles(point,sh_obstacles,sensor_range,triangles)
+        point_list.append(Cluster(point,counter,triangles_list))'''
