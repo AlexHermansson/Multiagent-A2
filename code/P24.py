@@ -1,8 +1,9 @@
-#import triangle as tr
+import triangle as tr
 import json
 import numpy as np
+from shapely.geometry import *
 
-data = json.load(open('Ptest.json'))
+data = json.load(open('P.json'))
 bounding_polygon = data["bounding_polygon"]
 goal_positions=np.array(data["goal_positions"])
 start_positions=np.array(data["start_positions"])
@@ -21,3 +22,9 @@ obstacles=[]
 for d in data:
     if "obstacle" in d:
         obstacles.append(data[d])
+
+sh_obstacles=[]
+for obstacle in obstacles:
+    sh_obstacles.append(Polygon(obstacle))
+
+a=0
