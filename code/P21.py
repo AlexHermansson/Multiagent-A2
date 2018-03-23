@@ -157,7 +157,7 @@ class Robot():
 
     def set_v_pref(self):
         self.v_pref=(self.p_goal-self.p)
-        if np.linalg.norm(self.v_pref) >self.v_max:
+        if np.linalg.norm(self.v_pref) > self.v_max:
             self.v_pref=self.v_pref/np.linalg.norm(self.v_pref)*self.v_max
         #todo:check here
 
