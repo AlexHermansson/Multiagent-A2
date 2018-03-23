@@ -1,6 +1,7 @@
 import triangle as tr
 import json
 import numpy as np
+import matplotlib.pyplot as plt
 
 data = json.load(open('P24.json'))
 bounding_polygon = data["bounding_polygon"]
@@ -26,13 +27,23 @@ for d in data:
 
 face = tr.get_data('face')
 
-np_bounding_polygon = np.array(bounding_polygon)
-np_obstacles = 0
-for obst in obstacles:
-    np_obst = np.array(obst)
+def to_vertices(bounding_polygon, obstacles):
+    """A function to take all vertices of the bounding polygon and obstacles
+    and put them into one large array."""
+    vertices = np.array(bounding_polygon)
+    for obst in obstacles:
+        np_obst = np.array(obst)
+        vertices = np.vstack((vertices, np_obst))
+
+    return vertices
 
 
-vertices = np.vstack((bounding_polygon, obstacles))
+vertices = to_vertices(bounding_polygon, obstacles)
+holes = polygon_holes(obstacles)
 a = 0
+plt.scatter(vertices[:,0], vertices[:,1])
+plt.show()
 
-#map_dict = {'vertices':}
+map_dict = {'vertices':vertices, 'holes':holes}
+t = tr.triangulate(map_dict, 'p')
+a = 0
