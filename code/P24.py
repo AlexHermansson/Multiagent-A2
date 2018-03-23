@@ -4,6 +4,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import *
+from shapely.ops import triangulate
 
 
 def polygon_holes(obstacles):
@@ -106,6 +107,7 @@ for d in data:
     if "obstacle" in d:
         obstacles.append(np.array((data[d])))
 
+poly_with_holes=Polygon(bounding_polygon,[o for o in obstacles])
 
 vertices = to_vertices(bounding_polygon, obstacles)
 holes = polygon_holes(obstacles)
