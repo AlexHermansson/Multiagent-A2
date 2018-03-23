@@ -107,10 +107,11 @@ def visible_triangles(point, polygon_with_holes, radius, tri_list):
 
         if triangle_bool:
             for vertex in triangle:
-                line = LineString(sh_point, Point(vertex))
+                line = LineString([sh_point, Point(vertex)])
 
                 # if the line between point and vertex intersects any holes, break
-                if polygon_with_holes.intersects(line):
+                a=polygon_with_holes.intersection(line)
+                if a.type is 'MultiLineString':
                     triangle_bool = False
                     break
 
@@ -155,9 +156,8 @@ segments = poly_to_segments(bounding_polygon, obstacles)
 
 map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}
 t = tr.triangulate(map_dict, 'p')
-visualize_triangulation(t)
+#visualize_triangulation(t)
 triangles = triangles_to_list(t)
-
 
 
 point = np.array([0,39])
