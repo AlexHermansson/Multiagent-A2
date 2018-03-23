@@ -155,12 +155,18 @@ holes = polygon_holes(obstacles)
 segments = poly_to_segments(bounding_polygon, obstacles)
 
 map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}
-t = tr.triangulate(map_dict, 'p')
-#visualize_triangulation(t)
+box = tr.get_data('box')
+#t = tr.triangulate(map_dict, 'p')
+t = tr.triangulate(box, 'pc')
+visualize_triangulation(t)
 triangles = triangles_to_list(t)
 
+bounds = box['vertices'][:4]
+hole = box['vertices'][4:]
 
-point = np.array([0,39])
+box_with_holes=Polygon(bounds,[o for o in obstacles])
+
+point = np.array([0,0])
+#counter, triangles_list = visible_triangles(point, poly_with_holes, sensor_range, triangles)
 counter, triangles_list = visible_triangles(point, poly_with_holes, sensor_range, triangles)
-
 a = 0
