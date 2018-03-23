@@ -81,6 +81,46 @@ def triangles_to_list(t):
 
     return triangles
 
+class Cluster():
+    """A class for point clusters."""
+    def __init__(self, coords, count, triangles):
+        self.coords = coords
+        self.count = count
+        self.triangles = triangles
+
+def visible_triangles(point, polygon_with_holes, radius, tri_list):
+    """For an input point, save all visible triangles and a counter of how many that are visible."""
+
+    counter = 0
+    triangles_list = []
+    sh_point = Point(point)
+    for triangle in tri_list:
+
+        triangle_bool = True
+        for vertex in triangle:
+
+            if np.linalg.norm(point - vertex) > radius:
+                # only breaks inner 'vertex' loop
+                triangle_bool = False
+                break
+
+        if triangle_bool:
+            for vertex in triangle:
+                line = LineString(sh_point, Point(vertex))
+
+                # if the line between point and vertex intersects any holes, break
+                if polygon_with_holes.intersects(line):
+                    triangle_bool = False
+                    break
+
+        # If "valid" triangle, increment counter and add to list
+        if triangle_bool:
+            counter += 1
+            triangles_list.append(triangle)
+
+
+    return counter, triangles_list
+
 
 
 '''Loading the data from json'''
@@ -116,5 +156,9 @@ t = tr.triangulate(map_dict, 'p')
 visualize_triangulation(t)
 triangles = triangles_to_list(t)
 
-a = 0
 
+
+point = np.array([0,39])
+counter, triangles_list = visible_triangles(point, poly_with_holes, sensor_range, triangles)
+
+a = 0
