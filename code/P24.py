@@ -185,6 +185,23 @@ for pos in goal_positions:
     counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
     point_list.append(Cluster(pos, counter, triangles_list))
 
+
+def remove_triangles(tri_list, clusters):
+
+    for cluster in clusters:
+        for triangle in cluster.triangles:
+
+            for i, t in enumerate(tri_list):
+                if (triangle == t).all():
+                    tri_list.pop(i)
+                    break
+
+
+    return tri_list
+
+tri = remove_triangles(triangles, point_list)
+
+
 a=0
 '''for obstacle in obstacles:
     for point in obstacle:
