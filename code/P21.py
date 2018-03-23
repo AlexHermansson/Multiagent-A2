@@ -11,7 +11,7 @@ from shapely import geometry
 class Robot():
 
 
-    def __init__(self, position, goal_position, v_max, index, tau = 4):
+    def __init__(self, position, goal_position, v_max, index, tau = 1):
         self.p = position
         self.p_goal = goal_position
         self.v = np.zeros(2)
@@ -28,8 +28,6 @@ class Robot():
 
     def move(self):
         """Update position"""
-        if self.ORCA:
-            a=0
         self.p += self.dt*self.v
         self.v_opt=self.v
         self.set_v_pref()
@@ -41,7 +39,7 @@ class Robot():
             objective = lambda v: np.linalg.norm(v - self.v_pref)
 
             constraint1 = lambda v, u, n: np.dot(v - (self.v_opt + 1/2 * u), n)
-            constraint2 = lambda v: self.v_max - np.linalg.norm(v)
+            constraint2 = lambda v: self.v_max-np.linalg.norm(v)
 
 
             constraints = ({'type':'ineq', 'fun':constraint2},)
@@ -53,12 +51,15 @@ class Robot():
             v_guess = np.zeros(2)
             res = minimize(objective, v_guess, method='SLSQP', constraints=constraints)
             if res.success:
-                if np.linalg.norm(res.x) > self.v_max + 1e-3:
-                    a = 0
+                if np.linalg.norm(res.x) > self.v_max:
+                    #res.x=res.x/np.linalg.norm(res.x)*self.v_max
+                    a=0
                 self.v = res.x
             else:
                 a=0
                 self.v = np.zeros(2)
+
+
 
         else:
 
@@ -71,7 +72,7 @@ class Robot():
         ORCA = []
         for robot in robots:
             if robot.index != self.index:
-                if np.linalg.norm(self.p-robot.p)<2*self.v_max*self.tau:
+                if np.linalg.norm(self.p-robot.p)<=2*self.v_max*self.tau:
                     u = self.compute_u(robot)
                     #if u.size > 0:
                     ORCA.append(u)
@@ -83,8 +84,8 @@ class Robot():
         #todo: fix front of the cone fucking god
         VO = self.create_VO(robot)
         v_opt_rel = self.v_opt - robot.v_opt
-
-        poly_contains = geometry.Polygon([VO['A'], VO['B'], VO['C'], VO['D']]).contains(geometry.Point(v_opt_rel))
+        polygon=geometry.Polygon([VO['A'],VO['center'], VO['B'], VO['C'], VO['D']])
+        poly_contains =polygon.contains(geometry.Point(v_opt_rel))
         sh_circle = geometry.Point(VO['center']).buffer(VO['radius'])
         circle_contains = sh_circle.contains(geometry.Point(v_opt_rel))
 
@@ -97,13 +98,15 @@ class Robot():
 
         elif circle_contains:
 
-            x_1 = VO['C']; x_2 = VO['D']
+            '''x_1 = VO['C']; x_2 = VO['D']
             dist_1 = np.dot(x_1, v_opt_rel) / (np.dot(x_1, x_1)) * x_1 - v_opt_rel
             dist_2 = np.dot(x_2, v_opt_rel) / (np.dot(x_2, x_2)) * x_2 - v_opt_rel
             dist_min = dist_1 if np.linalg.norm(dist_1) < np.linalg.norm(dist_2) else dist_2
             sh_point = sh_circle.boundary.intersection(geometry.LineString((geometry.Point(v_opt_rel), geometry.Point(v_opt_rel + dist_min))))
             point = np.array(sh_point.coords).reshape(-1)
-            return point - v_opt_rel, (point - v_opt_rel)/np.linalg.norm(point - v_opt_rel)
+            return point - v_opt_rel, (point - v_opt_rel)/np.linalg.norm(point - v_opt_rel)'''
+            u=(v_opt_rel-VO["center"])/np.linalg.norm(v_opt_rel-VO["center"])*VO['radius']-(v_opt_rel-VO["center"])
+            return u, u/np.linalg.norm(u)
 
         else:
             d1 = geometry.LineString([VO['A'], VO['D']]).distance(geometry.Point(v_opt_rel))
@@ -112,8 +115,15 @@ class Robot():
             if d2 < d1 and d2 < d3:
                 u = (VO['center'] - v_opt_rel) / np.linalg.norm(VO['center'] - v_opt_rel) * d2
                 return (u, -u / np.linalg.norm(u))
-
-            elif d1 < d3:
+            #todo: recheck this part maybe
+            else:
+                pol_ext=geometry.LinearRing(polygon.exterior.coords)
+                d=pol_ext.project(geometry.Point(v_opt_rel))
+                p=pol_ext.interpolate(d)
+                closest_point_coords=np.array(list(p.coords)[0])
+                u=closest_point_coords-v_opt_rel
+                return (u, -u / np.linalg.norm(u))
+            '''elif d1 < d3:
                 x_1 = VO['D']
                 u_1 = np.dot(x_1, v_opt_rel) / (np.dot(x_1, x_1)) * x_1 - v_opt_rel
                 return (u_1, -u_1 / np.linalg.norm(u_1))
@@ -121,7 +131,7 @@ class Robot():
             else:
                 x_3 = VO['C']
                 u_3 = np.dot(x_3, v_opt_rel) / (np.dot(x_3, x_3)) * x_3 - v_opt_rel
-                return (u_3, -u_3 / np.linalg.norm(u_3))
+                return (u_3, -u_3 / np.linalg.norm(u_3))'''
 
 
         '''elif geometry.Point(VO['center']).buffer(VO['radius']).contains(geometry.Point(v_opt_rel)):
@@ -157,8 +167,9 @@ class Robot():
 
     def set_v_pref(self):
         self.v_pref=(self.p_goal-self.p)
-        if np.linalg.norm(self.v_pref) > self.v_max:
-            self.v_pref=self.v_pref/np.linalg.norm(self.v_pref)*self.v_max
+        self.v_pref=self.v_pref/np.linalg.norm(self.v_pref)*self.v_max
+        if np.linalg.norm(self.v_pref)*self.dt>np.linalg.norm(self.p_goal-self.p):
+            self.v_pref=self.v_pref/np.linalg.norm(self.v_pref)*np.linalg.norm(self.p_goal-self.p)/self.dt
         #todo:check here
 
 
@@ -208,14 +219,14 @@ def set_bg():
         pg.draw.circle(screen, agents_colors[r], to_pygame(robots[r].p_goal),7, 1)
         pg.draw.line(screen,(0,0,0),to_pygame(robots[r].p),to_pygame(robots[r].p+robots[r].v_pref))
         pg.draw.line(screen, (255, 0, 0), to_pygame(robots[r].p), to_pygame(robots[r].p + robots[r].v))
-        if robots[r].index==3:
+        if robots[r].index==1:
             for orca in robots[r].ORCA:
                 n_perp=np.array((-orca[1][1],orca[1][0]))
                 a=robots[r].p+robots[r].v+0.5*orca[0]
                 b=a+20*n_perp
                 c=a-20*n_perp
-                #pg.draw.line(screen,agents_colors[r],to_pygame(b),to_pygame(c))
-                #pg.draw.line(screen,agents_colors[r],to_pygame(a),to_pygame(a+ orca[1]))
+                pg.draw.line(screen,agents_colors[r],to_pygame(b),to_pygame(c))
+                pg.draw.line(screen,agents_colors[r],to_pygame(a),to_pygame(a+ orca[1]))
 
 
 
@@ -234,7 +245,7 @@ background_colour = (255, 255, 255)
 screen.fill(background_colour)
 
 
-data = json.load(open('P21.json'))
+data = json.load(open('Ptest.json'))
 bounding_polygon = data["bounding_polygon"]
 goal_positions=np.array(data["goal_positions"])
 start_positions=np.array(data["start_positions"])
@@ -286,10 +297,12 @@ while not done:
 
     for robot in robots:
         robot.select_vel(robots)
-        #robot.move()
-
-    for robot in robots:
         robot.move()
+
+    '''for robot in robots:
+        robot.move()
+        if np.isclose(robot.p,robot.p_goal).all():
+            robots.remove(robot)'''
 
 
     set_bg()

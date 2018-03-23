@@ -29,6 +29,8 @@ def compute_u(p, v):
     center, r, A, B, C, D = create_VO(p)
 
     v_opt_rel = v
+
+    polygon = geometry.Polygon([A, center,B, C, D])
     polygon_contains=geometry.Polygon([A,center, B, C, D]).contains(geometry.Point(v_opt_rel))
     circle_contains=geometry.Point(center).buffer(r).contains(geometry.Point(v_opt_rel))
     if polygon_contains:
@@ -45,7 +47,7 @@ def compute_u(p, v):
         return (u, u/np.linalg.norm(u))
 
     else:
-        d1=geometry.LineString([A, D]).distance(geometry.Point(v_opt_rel))
+        '''d1=geometry.LineString([A, D]).distance(geometry.Point(v_opt_rel))
         d2=geometry.Point(center).buffer(r).distance(geometry.Point(v_opt_rel))
         d3= geometry.LineString([B, C]).distance(geometry.Point(v_opt_rel))
         if d2 < d1 and d2<d3:
@@ -58,7 +60,21 @@ def compute_u(p, v):
         else:
             x_3=C
             u_3 = np.dot(x_3, v_opt_rel) / (np.dot(x_3, x_3)) * x_3 - v_opt_rel
-            return (u_3, -u_3 / np.linalg.norm(u_3))
+            return (u_3, -u_3 / np.linalg.norm(u_3))'''
+        d1 = geometry.LineString([A, D]).distance(geometry.Point(v_opt_rel))
+        d2 = geometry.Point(center).buffer(r).distance(geometry.Point(v_opt_rel))
+        d3 = geometry.LineString([B, C]).distance(geometry.Point(v_opt_rel))
+        if d2 < d1 and d2 < d3:
+            u = (center - v_opt_rel) / np.linalg.norm(center - v_opt_rel) * d2
+            return (u, -u / np.linalg.norm(u))
+        # todo: recheck this part maybe
+        else:
+            pol_ext = geometry.LinearRing(polygon.exterior.coords)
+            d = pol_ext.project(geometry.Point(v_opt_rel))
+            p = pol_ext.interpolate(d)
+            closest_point_coords = np.array(list(p.coords)[0])
+            u = closest_point_coords - v_opt_rel
+            return (u, -u / np.linalg.norm(u))
 
 
 p = np.array((1,1.2))
@@ -82,7 +98,7 @@ plt.scatter(D[0], D[1],c='k')
 plt.axis([-4, 5, -4, 4])
 
 
-v = np.array([-2, -2])
+v = np.array([0.5, 0.5])
 
 plt.scatter(v[0], v[1], marker='*')
 
