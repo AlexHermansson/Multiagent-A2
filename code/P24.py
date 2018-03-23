@@ -4,21 +4,17 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import *
-from shapely.ops import *
+from shapely import ops
 from shapely.ops import triangulate
 
 
-def polygon_holes(obstacles):
+def polygon_holes(obstacles, sh_obstacles):
     '''function that finds inner points of the given polygons'''
     '''
         input: list of obstacles, each obstacle is a numpy matrix containing the (x,y) coordinates of the veretxes
         output: list of points contained in each obstacle, one per obstacle in the order of the obstacles
         *** shapely library is used ***
     '''
-    sh_obstacles = []
-    for obstacle in obstacles:
-        sh_obstacles.append(Polygon(obstacle))
-
     inner_points = []
     for i, obstacle in enumerate(obstacles):
         found = False
@@ -90,7 +86,7 @@ class Cluster():
         self.count = count
         self.triangles = triangles
 
-def visible_triangles(point, polygon_with_holes, radius, tri_list):
+def visible_triangles(point, sh_obst, radius, tri_list):
     """For an input point, save all visible triangles and a counter of how many that are visible."""
 
     counter = 0
@@ -99,23 +95,38 @@ def visible_triangles(point, polygon_with_holes, radius, tri_list):
     for triangle in tri_list:
 
         triangle_bool = True
-        for vertex in triangle:
+        sh_triangle=Polygon(triangle)
 
+        '''check if point can reach the whole triangle'''
+        for vertex in triangle:
             if np.linalg.norm(point - vertex) > radius:
                 # only breaks inner 'vertex' loop
                 triangle_bool = False
                 break
 
-        if triangle_bool:
-            for vertex in triangle:
-                line = LineString([sh_point, Point(vertex)])
-                line.s
-                # if the line between point and vertex intersects any holes, break
-                #if polygon_with_holes.exterior.contains():
-                a=line.intersection(polygon_with_holes.exterior)
-                if polygon_with_holes.exterior.disjoint(line):
-                    triangle_bool = False
-                    break
+        if not triangle_bool:
+            continue
+
+        '''check if point is in the triangle'''
+        if sh_triangle.crosses(sh_point) or sh_triangle.touches(sh_point):
+            counter += 1
+            triangles_list.append(triangle)
+            continue
+
+
+
+        '''check if the point can see every edge of the triangle'''
+
+        sh_tri1=Polygon([triangle[0],triangle[1],point])
+        sh_tri2 = Polygon([triangle[1],triangle[2],point])
+        sh_tri3 = Polygon([triangle[0],triangle[2],point])
+        for obstacle in sh_obst:
+            #if (sh_tri1.intersects(obstacle) and not sh_tri1.boundary.touches(obstacle.boundary)) or sh_tri2.crosses(obstacle) or sh_tri3.crosses(obstacle):
+            if (sh_tri1.intersects(obstacle) and not sh_tri1.touches(obstacle)) or \
+                    (sh_tri2.intersects(obstacle) and not sh_tri2.touches(obstacle))or \
+                    (sh_tri3.intersects(obstacle) and not sh_tri3.touches(obstacle)):
+                triangle_bool=False
+                break
 
         # If "valid" triangle, increment counter and add to list
         if triangle_bool:
@@ -128,7 +139,7 @@ def visible_triangles(point, polygon_with_holes, radius, tri_list):
 
 
 '''Loading the data from json'''
-data = json.load(open('box.json'))
+data = json.load(open('P24.json'))
 
 bounding_polygon = data["bounding_polygon"]
 '''goal_positions=np.array(data["goal_positions"])
@@ -150,28 +161,21 @@ for d in data:
     if "obstacle" in d:
         obstacles.append(np.array((data[d])))
 
-poly_with_holes=Polygon(bounding_polygon,[o for o in obstacles])
+sh_obstacles = []
+for obstacle in obstacles:
+    sh_obstacles.append(Polygon(obstacle))
 
 vertices = to_vertices(bounding_polygon, obstacles)
-holes = polygon_holes(obstacles)
+holes = polygon_holes(obstacles,sh_obstacles)
 segments = poly_to_segments(bounding_polygon, obstacles)
 
 map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}
-box = tr.get_data('box')
-#t = tr.triangulate(map_dict, 'p')
-t = tr.triangulate(box, 'pc')
-visualize_triangulation(t)
+t = tr.triangulate(map_dict, 'p')
+#visualize_triangulation(t)
 triangles = triangles_to_list(t)
 
-bounds = box['vertices'][:4]
-hole = box['vertices'][4:]
+point = np.array([21,0])
 
+counter, triangles_list = visible_triangles(point, sh_obstacles, sensor_range, triangles)
 
-point = np.array([0,0])
-counter, triangles_list = visible_triangles(point, poly_with_holes, sensor_range, triangles)
-
-
-point = np.array([0,0])
-#counter, triangles_list = visible_triangles(point, poly_with_holes, sensor_range, triangles)
-counter, triangles_list = visible_triangles(point, poly_with_holes, sensor_range, triangles)
 a = 0
