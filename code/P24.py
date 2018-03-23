@@ -109,11 +109,10 @@ def visible_triangles(point, polygon_with_holes, radius, tri_list):
         if triangle_bool:
             for vertex in triangle:
                 line = LineString([sh_point, Point(vertex)])
-                line.s
                 # if the line between point and vertex intersects any holes, break
                 #if polygon_with_holes.exterior.contains():
                 a=line.intersection(polygon_with_holes.exterior)
-                if polygon_with_holes.exterior.disjoint(line):
+                if line.crosses(polygon_with_holes.exterior):
                     triangle_bool = False
                     break
 
