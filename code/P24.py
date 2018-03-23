@@ -1,6 +1,5 @@
 import triangle as tr
 import triangle.plot as tr_plt
-from triangle import show_data
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,7 +69,21 @@ def visualize_triangulation(t):
     tr_plt.plot(ax, **t)
     plt.show()
 
+def triangles_to_list(t):
+    """Takes the triangulated object from library, and turn it into a list of triangles."""
+    triangles = []
+    for indices in t['triangles']:
 
+        triangle = []
+        for index in indices:
+            triangle.append(np.array(t['vertices'][index]))
+        triangles.append(np.array(triangle))
+
+    return triangles
+
+
+
+'''Loading the data from json'''
 data = json.load(open('P24.json'))
 
 bounding_polygon = data["bounding_polygon"]
@@ -86,8 +99,6 @@ vehicle_v_max = data["vehicle_v_max"]
 vehicle_dt=data["vehicle_dt"]
 sensor_range=data["sensor_range"]
 
-
-
 #load obstacles
 obstacles=[]
 #sh_obstacles=[]
@@ -96,17 +107,14 @@ for d in data:
         obstacles.append(np.array((data[d])))
 
 
-face = tr.get_data('face')
-spiral = tr.get_data('spiral')
-
 vertices = to_vertices(bounding_polygon, obstacles)
 holes = polygon_holes(obstacles)
 segments = poly_to_segments(bounding_polygon, obstacles)
 
-#plt.scatter(vertices[:,0], vertices[:,1])
-#plt.show()
-
 map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}
 t = tr.triangulate(map_dict, 'p')
-a = 0
 visualize_triangulation(t)
+triangles = triangles_to_list(t)
+
+a = 0
+
