@@ -111,7 +111,8 @@ def visible_triangles(point, polygon_with_holes, radius, tri_list):
 
                 # if the line between point and vertex intersects any holes, break
                 a=polygon_with_holes.intersection(line)
-                if a.type is 'MultiLineString':
+
+                if a.type is not 'Point' and a.type is not 'LineString' and a.type is not 'GeometryCollection':
                     triangle_bool = False
                     break
 
@@ -126,10 +127,10 @@ def visible_triangles(point, polygon_with_holes, radius, tri_list):
 
 
 '''Loading the data from json'''
-data = json.load(open('P24.json'))
+data = json.load(open('box.json'))
 
 bounding_polygon = data["bounding_polygon"]
-goal_positions=np.array(data["goal_positions"])
+'''goal_positions=np.array(data["goal_positions"])
 start_positions=np.array(data["start_positions"])
 points_of_interest = np.array(data['points_of_interest'])
 vehicle_L = data["vehicle_L"]
@@ -138,7 +139,7 @@ vehicle_omega_max = data["vehicle_omega_max"]
 vehicle_phi_max = data["vehicle_phi_max"]
 vehicle_t = data["vehicle_t"]
 vehicle_v_max = data["vehicle_v_max"]
-vehicle_dt=data["vehicle_dt"]
+vehicle_dt=data["vehicle_dt"]'''
 sensor_range=data["sensor_range"]
 
 #load obstacles
@@ -160,7 +161,7 @@ t = tr.triangulate(map_dict, 'p')
 triangles = triangles_to_list(t)
 
 
-point = np.array([0,39])
+point = np.array([0,3])
 counter, triangles_list = visible_triangles(point, poly_with_holes, sensor_range, triangles)
 
 a = 0
