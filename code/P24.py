@@ -133,6 +133,34 @@ def visible_triangles(point, sh_obst, radius, tri_list):
 
     return counter, triangles_list
 
+def remove_triangles_seen_from_start_and_goal(start_pos, goal_pos, sh_obstacles, sensor_range, triangles):
+
+    point_list=[]
+
+    for pos in start_pos:
+        counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
+        point_list.append(Cluster(pos, counter, triangles_list))
+
+    for pos in goal_pos:
+        counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
+        point_list.append(Cluster(pos, counter, triangles_list))
+
+    remaining_triangles = remove_triangles(triangles, point_list)
+    return remaining_triangles
+
+def remove_triangles(tri_list, clusters):
+
+    for cluster in clusters:
+        for triangle in cluster.triangles:
+
+            for i, t in enumerate(tri_list):
+                if (triangle == t).all():
+                    tri_list.pop(i)
+                    break
+
+
+    return tri_list
+
 
 
 '''Loading the data from json'''
@@ -170,40 +198,16 @@ map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}
 t = tr.triangulate(map_dict, 'p')
 #visualize_triangulation(t)
 triangles = triangles_to_list(t)
-
-point = np.array([21,0])
-
-counter, triangles_list = visible_triangles(point, sh_obstacles, sensor_range, triangles)
-
-point_list=[]
-
-for pos in start_positions:
-    counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
-    point_list.append(Cluster(pos, counter, triangles_list))
-
-for pos in goal_positions:
-    counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
-    point_list.append(Cluster(pos, counter, triangles_list))
-
-
-def remove_triangles(tri_list, clusters):
-
-    for cluster in clusters:
-        for triangle in cluster.triangles:
-
-            for i, t in enumerate(tri_list):
-                if (triangle == t).all():
-                    tri_list.pop(i)
-                    break
-
-
-    return tri_list
-
-tri = remove_triangles(triangles, point_list)
-
+triangles = remove_triangles_seen_from_start_and_goal(start_positions, goal_positions, sh_obstacles, sensor_range, triangles)
 
 a=0
-'''for obstacle in obstacles:
+
+
+point_list = []
+# inner vertices
+for obstacle in obstacles:
     for point in obstacle:
         counter, triangles_list=visible_triangles(point,sh_obstacles,sensor_range,triangles)
-        point_list.append(Cluster(point,counter,triangles_list))'''
+        point_list.append(Cluster(point,counter,triangles_list))
+
+#todo: sample points
