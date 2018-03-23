@@ -4,6 +4,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import *
+from shapely.ops import *
 from shapely.ops import triangulate
 
 
@@ -108,11 +109,11 @@ def visible_triangles(point, polygon_with_holes, radius, tri_list):
         if triangle_bool:
             for vertex in triangle:
                 line = LineString([sh_point, Point(vertex)])
-
+                line.s
                 # if the line between point and vertex intersects any holes, break
-                a=polygon_with_holes.intersection(line)
-
-                if a.type is not 'Point' and a.type is not 'LineString' and a.type is not 'GeometryCollection':
+                #if polygon_with_holes.exterior.contains():
+                a=line.intersection(polygon_with_holes.exterior)
+                if polygon_with_holes.exterior.disjoint(line):
                     triangle_bool = False
                     break
 
@@ -161,7 +162,7 @@ t = tr.triangulate(map_dict, 'p')
 triangles = triangles_to_list(t)
 
 
-point = np.array([0,3])
+point = np.array([0,0])
 counter, triangles_list = visible_triangles(point, poly_with_holes, sensor_range, triangles)
 
 a = 0
