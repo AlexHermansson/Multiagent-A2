@@ -1,9 +1,50 @@
 import triangle as tr
+import triangle.plot as tr_plt
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+from shapely.geometry import *
+
+
+def polygon_holes(obstacles):
+    '''function that finds inner points of the given polygons'''
+    '''
+        input: list of obstacles, each obstacle is a numpy matrix containing the (x,y) coordinates of the veretxes
+        output: list of points contained in each obstacle, one per obstacle in the order of the obstacles
+        *** shapely library is used ***
+    '''
+    sh_obstacles = []
+    for obstacle in obstacles:
+        sh_obstacles.append(Polygon(obstacle))
+
+    inner_points = []
+    for i, obstacle in enumerate(obstacles):
+        found = False
+        while not found:
+            x_min = np.min(obstacle[:, 0])
+            x_max = np.max(obstacle[:, 0])
+            y_min = np.min(obstacle[:, 1])
+            y_max = np.max(obstacle[:, 1])
+            rand_x = np.random.uniform(x_min, x_max)
+            rand_y = np.random.uniform(y_min, y_max)
+            if sh_obstacles[i].contains(Point([rand_x, rand_y])):
+                inner_points.append(np.array((rand_x, rand_y)))
+                break
+
+    return np.array(inner_points)
+
+def to_vertices(bounding_polygon, obstacles):
+    """A function to take all vertices of the bounding polygon and obstacles
+    and put them into one large array."""
+    vertices = np.array(bounding_polygon)
+    for obst in obstacles:
+        np_obst = np.array(obst)
+        vertices = np.vstack((vertices, np_obst))
+
+    return vertices
 
 data = json.load(open('P24.json'))
+
 bounding_polygon = data["bounding_polygon"]
 goal_positions=np.array(data["goal_positions"])
 start_positions=np.array(data["start_positions"])
@@ -17,33 +58,29 @@ vehicle_v_max = data["vehicle_v_max"]
 vehicle_dt=data["vehicle_dt"]
 sensor_range=data["sensor_range"]
 
+
+
 #load obstacles
 obstacles=[]
 #sh_obstacles=[]
 for d in data:
     if "obstacle" in d:
-        obstacles.append(data[d])
+        obstacles.append(np.array((data[d])))
 
 
 face = tr.get_data('face')
-
-def to_vertices(bounding_polygon, obstacles):
-    """A function to take all vertices of the bounding polygon and obstacles
-    and put them into one large array."""
-    vertices = np.array(bounding_polygon)
-    for obst in obstacles:
-        np_obst = np.array(obst)
-        vertices = np.vstack((vertices, np_obst))
-
-    return vertices
-
+spiral = tr.get_data('spiral')
 
 vertices = to_vertices(bounding_polygon, obstacles)
 holes = polygon_holes(obstacles)
-a = 0
-plt.scatter(vertices[:,0], vertices[:,1])
-plt.show()
+
+#plt.scatter(vertices[:,0], vertices[:,1])
+#plt.show()
 
 map_dict = {'vertices':vertices, 'holes':holes}
-t = tr.triangulate(map_dict, 'p')
+t = tr.triangulate(map_dict)
 a = 0
+
+
+tr_plt.compare(plt, map_dict, t)
+plt.show()
