@@ -43,6 +43,27 @@ def to_vertices(bounding_polygon, obstacles):
 
     return vertices
 
+def poly_to_segments(bound_poly, obs):
+
+    i=0
+    segments=[]
+    initial=i
+    for point in bound_poly:
+        segments.append(np.array((i,i+1)))
+        i+=1
+    segments.append(np.array((i-1, initial)))
+
+    for obstacle in obs:
+        initial=i
+        for point in obstacle:
+            segments.append(np.array((i, i + 1)))
+            i += 1
+        segments.append(np.array((i - 1, initial)))
+
+    return np.asarray(segments)
+
+
+
 data = json.load(open('P24.json'))
 
 bounding_polygon = data["bounding_polygon"]
