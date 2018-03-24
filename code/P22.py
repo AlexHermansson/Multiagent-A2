@@ -22,6 +22,7 @@ class VRP_GA():
         self.population, self.fitness_values, self.best_score, self.best_gene = self.init_population()
         self.best_scores=np.array([self.best_score])
         self.generation_scores=np.array(([self.best_score]))
+        self.count=0
 
     def genetic_algorithm(self, generations=50, plot = False, epsilon = 0.01, percent_plot = True):
         """Takes a population with k genes and a fitness function which evaluates

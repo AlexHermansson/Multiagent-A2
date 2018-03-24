@@ -4,6 +4,9 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import *
+import pyvisgraph as vg
+from P22 import VRP_GA
+
 from shapely import ops
 from shapely.ops import triangulate
 
@@ -155,6 +158,82 @@ def remove_triangles(tri_list, clusters):
 
     return tri_list
 
+def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
+    point_list = []
+    # inner vertices
+    for vertex in vertices:
+        counter, triangles_list = visible_triangles(vertex, sh_obstacles, sensor_range, triangles)
+        point_list.append(Cluster(vertex, counter, triangles_list))
+
+    best_count = 0
+    index = 0
+    for i,cluster in enumerate(point_list):
+        count = cluster.count
+
+        if count == 0:
+            vertices = np.delete(vertices, index, axis = 0)
+            continue
+
+        if count > best_count:
+            best_index = i
+            best_count = count
+        index += 1
+
+    best_cluster = point_list[best_index]
+    triangles = remove_triangles(triangles, [best_cluster])
+
+    return best_cluster.coords, triangles, vertices
+
+def greedy_set_cover(triangles, sh_obstacles, vertices, sensor_range):
+
+    points_to_visit = []
+    while triangles:
+        point, triangles, vertices = remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range)
+        points_to_visit.append(point)
+
+
+    return points_to_visit
+
+def set_distances(points1, points2, graph):
+    """ The distances between two sets of points.
+    First argument should be start or goal."""
+    K = len(points1)
+    N = len(points2)
+
+    D = np.zeros((K, N))
+    for i in range(K):
+        for j in range(N):
+            shortest_path = graph.shortest_path(vg.Point(points1[i][0], points1[i][1]), vg.Point(points2[j][0], points2[j][1]))
+            D[i, j] = path_to_distance(shortest_path)
+
+    return D
+
+def path_to_distance(path):
+    """Assume path is given as on VG object form."""
+    dist = 0
+    for i in range(1, len(path)):
+        dist += np.linalg.norm(to_np(path[i - 1]) - to_np(path[i]))
+    return dist
+
+def to_np(point):
+    """From VG point to ndarray"""
+    x = point.x
+    y = point.y
+    return np.array([x, y])
+
+def point_distances(points, graph):
+    N = len(points)
+    D = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            if i > j:
+                shortest_path = graph.shortest_path(vg.Point(points[i][0], points[i][1]), vg.Point(points[j][0], points[j][1]))
+                D[i, j] = path_to_distance(shortest_path)
+
+    D += D.T
+
+    return D
+
 
 
 '''Loading the data from json'''
@@ -199,47 +278,57 @@ triangles = triangles_to_list(t)
 triangles = remove_triangles_seen_from_start_and_goal(start_positions, goal_positions, sh_obstacles, sensor_range, triangles)
 
 
-def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
-    point_list = []
-    # inner vertices
-    for vertex in vertices:
-        counter, triangles_list = visible_triangles(vertex, sh_obstacles, sensor_range, triangles)
-        point_list.append(Cluster(vertex, counter, triangles_list))
-
-    best_count = 0
-    index = 0
-    for i,cluster in enumerate(point_list):
-        count = cluster.count
-
-        if count == 0:
-            vertices = np.delete(vertices, index, axis = 0)
-            continue
-
-        if count > best_count:
-            best_index = i
-            best_count = count
-        index += 1
-
-    best_cluster = point_list[best_index]
-    triangles = remove_triangles(triangles, [best_cluster])
-
-    return best_cluster.coords, triangles, vertices
-
-def greedy_set_cover(triangles, sh_obstacles, vertices, sensor_range):
-
-    points_to_visit = []
-    while triangles:
-        point, triangles, vertices = remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range)
-        points_to_visit.append(point)
-
-
-    return points_to_visit
-
-
 
 points_to_visit = greedy_set_cover(triangles, sh_obstacles, obst_vertices, sensor_range)
 #triangles, vertices = remove_best_cluster(triangles, sh_obstacles, obstacles, sensor_range)
 
-a = 0
+'''create visibility graph'''
+'''vg_obstacles=[]
+for obstacle in obstacles:
+    vg_obstacles.append([vg.Point(p[0],p[1]) for p in obstacle])
+
+g=vg.VisGraph()
+g.build(vg_obstacles)
+a = [edge for edge in g.visgraph.edges]
+p1 = a[0].p1
+pg_edges=[]
+
+for edge in g.visgraph.edges:
+    p1=[edge.p1.x,edge.p1.y]
+    p2=[edge.p2.x,edge.p2.y]
+    #pg_edges.append(list_to_pygame([p1,p2]))
+
+D_sp = set_distances(start_positions, points_to_visit, g)
+D_pp = point_distances(points_to_visit, g)
+D_pg = set_distances(goal_positions, points_to_visit, g)
+D_sg = set_distances(start_positions, goal_positions, g)
+np.save('D_sp_24', D_sp)
+np.save('D_pp_24', D_pp)
+np.save('D_pg_24', D_pg)
+np.save('D_sg_24', D_sg)'''
+
+D_sp = np.load('D_sp_24.npy')
+D_pp = np.load('D_pp_24.npy')
+D_pg = np.load('D_pg_24.npy')
+D_sg = np.load('D_sg_24.npy')
+
+N = len(points_to_visit) # number of pickup points
+k = len(start_positions) # number of robots
+pop_size = 1000
+generations = 100
+#n_trials=30
+#N = 5# number of pickup points
+#k = 3 # number of robots
+lambd=6
+vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
+
+vrp_ga.genetic_algorithm(generations,True, 0.01)
+plt.plot(vrp_ga.best_scores)
+plt.plot(vrp_ga.generation_scores)
+plt.xlabel('epoch')
+plt.ylabel('objective')
+plt.show()
+print(vrp_ga.best_score)
+
 
 #todo: sample points
