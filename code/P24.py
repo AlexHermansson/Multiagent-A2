@@ -11,29 +11,21 @@ from shapely.ops import triangulate
 def polygon_holes(obstacles, sh_obstacles):
     '''function that finds inner points of the given polygons'''
     '''
-        input: list of obstacles, each obstacle is a numpy matrix containing the (x,y) coordinates of the veretxes
+        input: list of obstacles, each obstacle is a numpy matrix containing the (x,y) coordinates of the vertices
         output: list of points contained in each obstacle, one per obstacle in the order of the obstacles
         *** shapely library is used ***
     '''
+
     inner_points = []
-    for i, obstacle in enumerate(obstacles):
-        found = False
-        while not found:
-            x_min = np.min(obstacle[:, 0])
-            x_max = np.max(obstacle[:, 0])
-            y_min = np.min(obstacle[:, 1])
-            y_max = np.max(obstacle[:, 1])
-            rand_x = np.random.uniform(x_min, x_max)
-            rand_y = np.random.uniform(y_min, y_max)
-            if sh_obstacles[i].contains(Point([rand_x, rand_y])):
-                inner_points.append(np.array((rand_x, rand_y)))
-                break
+    for sh_obst in sh_obstacles:
+        repr_point = np.array(sh_obst.representative_point().coords)
+        inner_points.append(repr_point)
 
     return np.array(inner_points)
 
 def to_vertices(bounding_polygon, obstacles):
     """A function to take all vertices of the bounding polygon and obstacles
-    and put them into one large array."""
+    and stacks them in one large array."""
     vertices = np.array(bounding_polygon)
     for obst in obstacles:
         np_obst = np.array(obst)
@@ -42,6 +34,8 @@ def to_vertices(bounding_polygon, obstacles):
     return vertices
 
 def poly_to_segments(bound_poly, obs):
+    """Function to create the edges of the bounding polygon and obstacles.
+    The edges consists of indices of the vertices. Used in the triangulation."""
 
     i=0
     segments=[]
@@ -190,24 +184,62 @@ sh_obstacles = []
 for obstacle in obstacles:
     sh_obstacles.append(Polygon(obstacle))
 
+'''Create the triangulation of the map.'''
 vertices = to_vertices(bounding_polygon, obstacles)
-holes = polygon_holes(obstacles,sh_obstacles)
+obst_vertices = vertices[len(bounding_polygon):]
+holes = polygon_holes(obstacles, sh_obstacles)
 segments = poly_to_segments(bounding_polygon, obstacles)
-
 map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}
 t = tr.triangulate(map_dict, 'p')
-#visualize_triangulation(t)
+
+visualize_triangulation(t)
+'''Remove all the triangle regions that can be seen from the start and goal positions.'''
 triangles = triangles_to_list(t)
+
 triangles = remove_triangles_seen_from_start_and_goal(start_positions, goal_positions, sh_obstacles, sensor_range, triangles)
 
-a=0
+
+def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
+    point_list = []
+    # inner vertices
+    for vertex in vertices:
+        counter, triangles_list = visible_triangles(vertex, sh_obstacles, sensor_range, triangles)
+        point_list.append(Cluster(vertex, counter, triangles_list))
+
+    best_count = 0
+    index = 0
+    for cluster in point_list:
+        count = cluster.count
+
+        if count == 0:
+            vertices = np.delete(vertices, index, axis = 0)
+            continue
+
+        if count > best_count:
+            best_index = index
+            best_count = count
+        index += 1
+
+    best_cluster = point_list[best_index]
+    triangles = remove_triangles(triangles, [best_cluster])
+
+    return best_cluster.coords, triangles, vertices
+
+def greedy_set_cover(triangles, sh_obstacles, vertices, sensor_range):
+
+    points_to_visit = []
+    while triangles:
+        point, triangles, vertices = remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range)
+        points_to_visit.append(point)
 
 
-point_list = []
-# inner vertices
-for obstacle in obstacles:
-    for point in obstacle:
-        counter, triangles_list=visible_triangles(point,sh_obstacles,sensor_range,triangles)
-        point_list.append(Cluster(point,counter,triangles_list))
+    return points_to_visit
+
+
+
+points_to_visit = greedy_set_cover(triangles, sh_obstacles, obst_vertices, sensor_range)
+#triangles, vertices = remove_best_cluster(triangles, sh_obstacles, obstacles, sensor_range)
+
+a = 0
 
 #todo: sample points
