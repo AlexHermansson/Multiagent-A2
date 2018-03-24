@@ -208,7 +208,7 @@ def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
 
     best_count = 0
     index = 0
-    for cluster in point_list:
+    for i,cluster in enumerate(point_list):
         count = cluster.count
 
         if count == 0:
@@ -216,7 +216,7 @@ def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
             continue
 
         if count > best_count:
-            best_index = index
+            best_index = i
             best_count = count
         index += 1
 
