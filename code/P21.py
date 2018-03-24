@@ -39,10 +39,17 @@ class Robot():
             objective = lambda v: np.linalg.norm(v - self.v_pref)
 
             constraint1 = lambda v, u, n: np.dot(v - (self.v_opt + 1/2 * u), n)
-            constraint2 = lambda v: self.v_max-np.linalg.norm(v)
+            #constraint2 = lambda v: self.v_max-np.linalg.norm(v)
+            constraint2 = lambda v: np.sqrt(self.v_max)+v[0]
+            constraint3 = lambda v: np.sqrt(self.v_max) -v[0]
+            constraint4 = lambda v: np.sqrt(self.v_max) + v[1]
+            constraint5 = lambda v: np.sqrt(self.v_max) - v[1]
 
 
-            constraints = ({'type':'ineq', 'fun':constraint2},)
+            constraints = ({'type':'ineq', 'fun':constraint2},
+                           {'type':'ineq', 'fun':constraint3},
+                           {'type':'ineq', 'fun':constraint4},
+                           {'type': 'ineq', 'fun': constraint5},)
             for u_t in ORCA:
                 u=u_t[0]
                 n=u_t[1]
