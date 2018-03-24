@@ -665,7 +665,6 @@ triangles = triangles_to_list(t)
 
 triangles, start_clusters,goal_clusters = remove_triangles_seen_from_start_and_goal(start_positions, goal_positions, sh_obstacles, sensor_range, triangles)
 
-
 points_to_visit, clusters = greedy_set_cover(triangles, sh_obstacles, obst_vertices, sensor_range)
 
 
