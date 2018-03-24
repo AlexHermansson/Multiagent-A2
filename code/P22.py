@@ -12,10 +12,10 @@ from shapely import geometry
 
 class VRP_GA():
 
-    def __init__(self, N, k, D_pg, D_pp, D_sp, D_sg, population_size,lambd,goal_positions):
+    def __init__(self, N, k, D_pg_, D_pp_, D_sp_, D_sg_, population_size,lambd,goal_positions):
         self.N = N; self.k = k
-        self.D_pg = D_pg; self.D_pp = D_pp
-        self.D_sp = D_sp; self.D_sg = D_sg
+        self.D_pg = D_pg_; self.D_pp = D_pp_
+        self.D_sp = D_sp_; self.D_sg = D_sg_
         self.population_size = population_size
         self.lambd = lambd
         self.goal_positions = goal_positions
