@@ -155,6 +155,42 @@ def remove_triangles(tri_list, clusters):
 
     return tri_list
 
+def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
+    point_list = []
+    # inner vertices
+    for vertex in vertices:
+        counter, triangles_list = visible_triangles(vertex, sh_obstacles, sensor_range, triangles)
+        point_list.append(Cluster(vertex, counter, triangles_list))
+
+    best_count = 0
+    index = 0
+    for i,cluster in enumerate(point_list):
+        count = cluster.count
+
+        if count == 0:
+            vertices = np.delete(vertices, index, axis = 0)
+            continue
+
+        if count > best_count:
+            best_index = i
+            best_count = count
+        index += 1
+
+    best_cluster = point_list[best_index]
+    triangles = remove_triangles(triangles, [best_cluster])
+
+    return best_cluster.coords, triangles, vertices
+
+def greedy_set_cover(triangles, sh_obstacles, vertices, sensor_range):
+
+    points_to_visit = []
+    while triangles:
+        point, triangles, vertices = remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range)
+        points_to_visit.append(point)
+
+
+    return points_to_visit
+
 
 
 '''Loading the data from json'''
@@ -197,48 +233,7 @@ visualize_triangulation(t)
 triangles = triangles_to_list(t)
 
 triangles = remove_triangles_seen_from_start_and_goal(start_positions, goal_positions, sh_obstacles, sensor_range, triangles)
-
-
-def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
-    point_list = []
-    # inner vertices
-    for vertex in vertices:
-        counter, triangles_list = visible_triangles(vertex, sh_obstacles, sensor_range, triangles)
-        point_list.append(Cluster(vertex, counter, triangles_list))
-
-    best_count = 0
-    index = 0
-    for i,cluster in enumerate(point_list):
-        count = cluster.count
-
-        if count == 0:
-            vertices = np.delete(vertices, index, axis = 0)
-            continue
-
-        if count > best_count:
-            best_index = i
-            best_count = count
-        index += 1
-
-    best_cluster = point_list[best_index]
-    triangles = remove_triangles(triangles, [best_cluster])
-
-    return best_cluster.coords, triangles, vertices
-
-def greedy_set_cover(triangles, sh_obstacles, vertices, sensor_range):
-
-    points_to_visit = []
-    while triangles:
-        point, triangles, vertices = remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range)
-        points_to_visit.append(point)
-
-
-    return points_to_visit
-
-
-
 points_to_visit = greedy_set_cover(triangles, sh_obstacles, obst_vertices, sensor_range)
-#triangles, vertices = remove_best_cluster(triangles, sh_obstacles, obstacles, sensor_range)
 
 a = 0
 
