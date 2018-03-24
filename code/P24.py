@@ -266,7 +266,7 @@ class VRP_GA():
         return gene
 
 
-def set_bg():
+def set_bg(cl):
     '''set initial and final position'''
     screen.fill((255, 255, 255))
     '''set obstacles'''
@@ -274,19 +274,37 @@ def set_bg():
     '''set boundaries'''
     pg.draw.polygon(screen, (0, 0, 0), pg_bounding_polygon, 1)
     '''set start and goal positions'''
-    for i,tl in enumerate(real_tl):
-        pg.draw.circle(screen,cols[i],to_pygame(tl[0]),4)
-        for j in range(1,len(tl)):
-            if j==len(tl)-1:
-                pg.draw.circle(screen,cols[i],to_pygame(tl[j]),4,1)
-                pg.draw.line(screen,cols[i],to_pygame(tl[j-1]),to_pygame(tl[j]))
-            else:
-                pg.draw.circle(screen, cols[i], to_pygame(tl[j]), 2, 1)
-                pg.draw.line(screen, cols[i],to_pygame(tl[j-1]),to_pygame(tl[j]))
-    '''for edge in pg_edges:
-        pg.draw.line(screen,(0,255,0),edge[0],edge[1])'''
-    for point in points_to_visit:
-        pg.draw.circle(screen,(0,0,0),to_pygame(point),4,1)
+
+    if cl:
+        for cluster in start_clusters:
+            for triangle in cluster.triangles:
+                if cluster.color is True:
+                    pg.draw.polygon(screen, (192, 192, 192), list_to_pygame(list(triangle)))
+
+        pg.draw.circle(screen, (0, 0, 255), to_pygame(cl.coords), sensor_range * 14,1)
+        for triangle in cl.triangles:
+            pg.draw.polygon(screen,(255,255,0),list_to_pygame(list(triangle)))
+        pg.draw.circle(screen, (255, 0, 200), to_pygame(cl.coords), 10)
+
+    for cluster in start_clusters:
+        for triangle in cluster.triangles:
+            pg.draw.polygon(screen,(0,0,0),list_to_pygame(list(triangle)),1)
+
+    if not cl:
+        for i,tl in enumerate(real_tl):
+            pg.draw.circle(screen,cols[i],to_pygame(tl[0]),6)
+            for j in range(1,len(tl)):
+                if j==len(tl)-1:
+                    pg.draw.circle(screen,cols[i],to_pygame(tl[j]),6,1)
+                    pg.draw.line(screen,cols[i],to_pygame(tl[j-1]),to_pygame(tl[j]),3)
+                else:
+                    pg.draw.circle(screen, cols[i], to_pygame(tl[j]), 2, 1)
+                    pg.draw.line(screen, cols[i],to_pygame(tl[j-1]),to_pygame(tl[j]),3)
+        '''for edge in pg_edges:
+            pg.draw.line(screen,(0,255,0),edge[0],edge[1])'''
+        for point in points_to_visit:
+            pg.draw.circle(screen,(255,0,200),to_pygame(point),4,0)
+
 
 
 def list_to_pygame(list_of_points):
@@ -325,7 +343,7 @@ def to_pygame(coords):
     return (int(coords[0] * 14 + width / 2 - 150), int(coords[1] * -14 + height / 2 + 200))
 
 
-def polygon_holes(obstacles, sh_obstacles):
+def polygon_holes(sh_obstacles):
     '''function that finds inner points of the given polygons'''
     '''
         input: list of obstacles, each obstacle is a numpy matrix containing the (x,y) coordinates of the vertices
@@ -396,6 +414,7 @@ class Cluster():
         self.coords = coords
         self.count = count
         self.triangles = triangles
+        self.color=False
 
 def visible_triangles(point, sh_obst, radius, tri_list):
     """For an input point, save all visible triangles and a counter of how many that are visible."""
@@ -446,18 +465,22 @@ def visible_triangles(point, sh_obst, radius, tri_list):
 
 def remove_triangles_seen_from_start_and_goal(start_pos, goal_pos, sh_obstacles, sensor_range, triangles):
 
-    point_list=[]
+    start_list=[]
+    goal_list=[]
 
     for pos in start_pos:
         counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
-        point_list.append(Cluster(pos, counter, triangles_list))
+        cluster=Cluster(pos, counter, triangles_list)
+        start_list.append(cluster)
+        remaining_triangles = remove_triangles(triangles, [cluster])
 
     for pos in goal_pos:
         counter, triangles_list = visible_triangles(pos, sh_obstacles, sensor_range, triangles)
-        point_list.append(Cluster(pos, counter, triangles_list))
+        cluster = Cluster(pos, counter, triangles_list)
+        goal_list.append(cluster)
+        remaining_triangles = remove_triangles(triangles, [cluster])
 
-    remaining_triangles = remove_triangles(triangles, point_list)
-    return remaining_triangles
+    return remaining_triangles, start_list, goal_list
 
 def remove_triangles(tri_list, clusters):
 
@@ -628,8 +651,10 @@ pg_bounding_polygon=list_to_pygame(bounding_polygon)
 
 '''Create the triangulation of the map.'''
 vertices = to_vertices(bounding_polygon, obstacles)
-obst_vertices = vertices[len(bounding_polygon):]
-holes = polygon_holes(obstacles, sh_obstacles)
+#obst_vertices = vertices[len(bounding_polygon):].copy()
+obst_vertices=np.loadtxt('40_p24.txt')
+#np.random.shuffle(obst_vertices)
+holes = polygon_holes(sh_obstacles)
 segments = poly_to_segments(bounding_polygon, obstacles)
 map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}
 t = tr.triangulate(map_dict, 'p')
@@ -638,11 +663,17 @@ visualize_triangulation(t)
 '''Remove all the triangle regions that can be seen from the start and goal positions.'''
 triangles = triangles_to_list(t)
 
-triangles = remove_triangles_seen_from_start_and_goal(start_positions, goal_positions, sh_obstacles, sensor_range, triangles)
-
+triangles, start_clusters,goal_clusters = remove_triangles_seen_from_start_and_goal(start_positions, goal_positions, sh_obstacles, sensor_range, triangles)
 
 
 points_to_visit, clusters = greedy_set_cover(triangles, sh_obstacles, obst_vertices, sensor_range)
+
+
+
+start_clusters.extend(goal_clusters)
+start_clusters.extend(clusters)
+
+
 #triangles, vertices = remove_best_cluster(triangles, sh_obstacles, obstacles, sensor_range)
 
 '''create visibility graph'''
@@ -692,32 +723,37 @@ plt.plot(vrp_ga.generation_scores)
 plt.xlabel('epoch')
 plt.ylabel('objective')
 plt.show()
-print(vrp_ga.best_score)
+print(vrp_ga.best_score/vehicle_v_max)
 
 best_gene=vrp_ga.best_gene
 paths=vrp_ga.create_travel_list(best_gene)
 travel_list = path_decoder(paths)
 real_tl = real_travel_list(travel_list)
+np.savetxt('bestgene_24.txt',obst_vertices)
 
 
 
 time_step=0
 start = False
 done = False
+i=0
 
 while not done:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             done = True
-    if not start:
-        t0 = time.time()
-        t1 = 0
-        while (t1 - t0 < 1):
-            t1 = time.time()
-        start = True
+    t0 = time.time()
+    t1 = 0
+    while (t1 - t0 < 2):
+        t1 = time.time()
+    if i< len(start_clusters):
+        cl=start_clusters[i]
+        start_clusters[i].color=True
+    else:
+        cl=None
+    set_bg(cl)
+    pg.display.flip()
+    i+=1
 
-        set_bg()
-        # set_data(total_time * 0.1)
-        pg.display.flip()
 
 #todo: sample points
