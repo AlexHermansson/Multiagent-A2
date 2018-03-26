@@ -185,8 +185,8 @@ class VRP_GA():
     def new_population(self, epsilon):
         new_population = np.zeros((self.population_size, self.N + self.k), dtype=int)
         for j in range(self.population_size):
-            x = self.gene_selection(batch_size=10)  # parents x and y
-            y = self.gene_selection(batch_size=10)
+            x = self.gene_selection(batch_size=20)  # parents x and y
+            y = self.gene_selection(batch_size=20)
             child1, child2 = self.crossover(x, y)
             if np.random.rand() < epsilon:
                 self.mutate(child1)
@@ -621,8 +621,8 @@ D_sg = np.load('D_sg_23.npy')
 
 N = len(points_to_visit) # number of pickup points
 k = len(start_positions) # number of robots
-pop_size = 200
-generations = 20
+pop_size = 4000
+generations = 100
 #n_trials=30
 #N = 5# number of pickup points
 #k = 3 # number of robots
