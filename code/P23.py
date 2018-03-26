@@ -6,12 +6,16 @@ import pyvisgraph as vg
 import pygame as pg
 import time
 import random
+from numpy.linalg import norm
 
 
+class Cluster():
 
-
-
-
+    def __init__(self,coords):
+        self.coords=coords
+        self.neighbours=[]
+        self.seen=False
+        self.count=0
 
 
 '''Loading the data from json'''
@@ -46,3 +50,18 @@ sh_bounding_polygon = Polygon(bounding_polygon)
 min_x, min_y, max_x, max_y = sh_bounding_polygon.bounds
 
 a = 0
+
+cluster_list=[]
+
+for point in points_of_interest:
+    cluster_list.append(Cluster(point))
+
+
+for i,this_cluster in enumerate(cluster_list):
+    for other_cluster in cluster_list[i+1:]:
+        if norm(this_cluster.coords-other_cluster.coords)<sensor_range:
+            #todo: check obstacle
+            this_cluster.neighbours.append(other_cluster)
+            other_cluster.neighbours.append(this_cluster)
+            this_cluster.count+=1
+            other_cluster.count+=1
