@@ -35,16 +35,16 @@ class Robot():
 
     def select_vel(self, robots):
         """linear programming stuff"""
-        '''ORCA = self.compute_ORCA(robots)
+        ORCA = self.compute_ORCA(robots)
         if ORCA:
             objective = lambda v: np.linalg.norm(v - self.v_pref)
 
             constraint1 = lambda v, u, n: np.dot(v - (self.v_opt + 1/2 * u), n)
-            #constraint2 = lambda v: self.v_max-np.linalg.norm(v)
-            constraint2 = lambda v: np.sqrt(self.v_max)+v[0]
+            constraint2 = lambda v: self.v_max-np.linalg.norm(v)+1e-7
+            '''constraint2 = lambda v: np.sqrt(self.v_max)+v[0]
             constraint3 = lambda v: np.sqrt(self.v_max) -v[0]
             constraint4 = lambda v: np.sqrt(self.v_max) + v[1]
-            constraint5 = lambda v: np.sqrt(self.v_max) - v[1]
+            constraint5 = lambda v: np.sqrt(self.v_max) - v[1]'''
 
 
             constraints = ({'type':'ineq', 'fun':constraint2},)
@@ -65,46 +65,7 @@ class Robot():
 
         else:
 
-            self.v=self.v_pref'''
-
-        '''Testing the quadprog optimizer'''
-        ORCA = self.compute_ORCA(robots)
-        if ORCA:
-            m = len(ORCA) # m ORCA regions
-
-            '''create matrices for quadprog'''
-            P = 2*np.identity(2)
-            q = -2*self.v_pref
-            G = np.zeros((m+4, 2))
-            h = np.zeros(m+4)
-            for i, o in enumerate(ORCA):
-                u, n = o
-                G[i] += -n
-                h_value = -(self.v_opt + 1/2*u).dot(n)
-                h[i] += h_value
-                a = 0
-
-            G[-4] += np.array([1, 0])
-            G[-3] += np.array([-1, 0])
-            G[-2] += np.array([0, 1])
-            G[-1] += np.array([0, -1])
-            h[-4:] += np.sqrt(self.v_max)
-
-            '''convert to cvxopt matrices for compatibility with cvxopt solver'''
-            P = cvxopt.matrix(P)
-            q = cvxopt.matrix(q)
-            G = cvxopt.matrix(G)
-            h = cvxopt.matrix(h)
-
-            '''Do the optimization'''
-            solution = cvxopt.solvers.qp(P, q, G, h)
-            status = solution['status']
-            if status != 'optimal':
-                a = 0
-
-            self.v = np.array(solution['x']).reshape(-1)
-            sol_norm = np.linalg.norm(self.v)
-            a = 0
+            self.v=self.v_pref
 
 
 
