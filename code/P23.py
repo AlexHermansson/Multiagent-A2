@@ -44,23 +44,5 @@ for obstacle in obstacles:
 
 sh_bounding_polygon = Polygon(bounding_polygon)
 min_x, min_y, max_x, max_y = sh_bounding_polygon.bounds
-x_diff = max_x - min_x
-y_diff = max_y - min_y
-
-side_len = 2*sensor_range/np.sqrt(10)
-
-x_grid = x_diff // side_len + 1
-y_grid = y_diff // side_len + 1
-
-
-class Grid():
-
-    def __init__(self, index, coords):
-        self.index = index
-        self.coords = coords
-
-    def to_shapely(self):
-
-        pass
 
 a = 0
