@@ -185,8 +185,8 @@ class VRP_GA():
     def new_population(self, epsilon):
         new_population = np.zeros((self.population_size, self.N + self.k), dtype=int)
         for j in range(self.population_size):
-            x = self.gene_selection(batch_size=10)  # parents x and y
-            y = self.gene_selection(batch_size=10)
+            x = self.gene_selection(batch_size=15)  # parents x and y
+            y = self.gene_selection(batch_size=15)
             child1, child2 = self.crossover(x, y)
             if np.random.rand() < epsilon:
                 self.mutate(child1)
@@ -621,8 +621,8 @@ D_sg = np.load('D_sg_23.npy')
 
 N = len(points_to_visit) # number of pickup points
 k = len(start_positions) # number of robots
-pop_size = 200
-generations = 20
+pop_size = 3000
+generations = 150
 #n_trials=30
 #N = 5# number of pickup points
 #k = 3 # number of robots
@@ -641,7 +641,7 @@ best_gene=vrp_ga.best_gene
 paths=vrp_ga.create_travel_list(best_gene)
 travel_list = path_decoder(paths)
 real_tl = real_travel_list(travel_list)
-np.savetxt('bestgene_23.txt',best_gene,fmt='%i')
+np.savetxt('77sec_bestgene_23.txt',best_gene,fmt='%i')
 
 time_step=0
 start = False
