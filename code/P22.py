@@ -44,7 +44,7 @@ class VRP_GA():
             self.generation_scores=np.append(self.generation_scores,best_score)
 
             if self.count>10:
-                self.check_unique()
+                #self.check_unique()
                 self.count=0
 
 
@@ -116,9 +116,39 @@ class VRP_GA():
                 max_cost = cost
             total_cost+=cost
 
-        loss=total_cost+self.lambd*max_cost
+        loss=(1-self.lambd)*total_cost+self.lambd*max_cost
 
-        return max_cost#loss
+        return loss
+
+    def fitness1(self, gene):
+
+        travel_list = self.create_travel_list(gene)
+        max_cost = -np.inf
+        total_cost=0
+        for path in travel_list:
+            L = len(path)
+            cost = 0
+            for i in range(L):
+
+                if i == 0:
+                    # if only start and goal in the path
+                    if i == L-1:
+                        cost += D_sg[path[i], path[i]]
+                    else:
+                        cost += D_sp[path[i]][path[i+1] - self.k]
+
+                else:
+
+                    if i == L - 1:
+                        cost += D_pg[path[0], path[i] - self.k]
+                    else:
+                        cost += D_pp[path[i] - self.k, path[i+1] - self.k]
+
+            if cost > max_cost:
+                max_cost = cost
+            total_cost+=cost
+
+        return max_cost
 
     def create_travel_list(self, gene):
         first_start = False  # says if we have found the first start position
@@ -400,13 +430,13 @@ def to_pygame(coords):
 
 
 '''set pygame env'''
-'''pg.init()
+pg.init()
 infoObject = pg.display.Info()
 screen = pg.display.set_mode((infoObject.current_w, infoObject.current_h))
 width = infoObject.current_w
 height = infoObject.current_h
 background_colour = (255, 255, 255)
-screen.fill(background_colour)'''
+screen.fill(background_colour)
 
 '''import json data'''
 data = json.load(open('P22.json'))
@@ -431,7 +461,7 @@ vehicle_v_max = data["vehicle_v_max"]
 cols=colors(6)
 
 '''set pygame obstacles anf bounding polygon'''
-"""pg_obstacles=[]
+pg_obstacles=[]
 for obstacle in obstacles:
     pg_obstacles.append(list_to_pygame(obstacle))
 
@@ -451,7 +481,7 @@ pg_edges=[]
 for edge in g.visgraph.edges:
     p1=[edge.p1.x,edge.p1.y]
     p2=[edge.p2.x,edge.p2.y]
-    pg_edges.append(list_to_pygame([p1,p2]))"""
+    pg_edges.append(list_to_pygame([p1,p2]))
 
 
 #D_sp = set_distances(start_positions, points_of_interest, g)
@@ -472,12 +502,12 @@ D_sg = np.load('D_sg.npy')
 
 N = len(points_of_interest) # number of pickup points
 k = len(start_positions) # number of robots
-pop_size = 2000
-generations = 250
+pop_size = 4000
+generations = 200
 n_trials=30
 #N = 5# number of pickup points
 #k = 3 # number of robots
-lambd=6
+lambd=0.7
 vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
 
 
@@ -504,8 +534,22 @@ vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
 
 
 np.savetxt('bestgene.txt',best_gene,fmt='%i')'''
-best_gene=np.loadtxt('45_8.txt',dtype=int)
+vrp_ga.genetic_algorithm(generations,True, 0.01)
+plt.plot(vrp_ga.best_scores)
+plt.plot(vrp_ga.generation_scores)
+plt.xlabel('epoch')
+plt.ylabel('objective')
+plt.show()
+best_gene=vrp_ga.best_gene
+np.savetxt('bestgene.txt',best_gene,fmt='%i')
+print(vrp_ga.best_score)
+print(vrp_ga.fitness1(best_gene)/vehicle_v_max)
+
+#best_gene=np.loadtxt('45_8.txt',dtype=int)
 paths=vrp_ga.create_travel_list(best_gene)
+travel_list = path_decoder(paths)
+real_tl = real_travel_list(travel_list)
+
 
 time_step=0
 start = False
@@ -524,7 +568,7 @@ intersect_2 = red_line.intersection(blue_line2)
 point_2 = np.array(intersect_2.coords).reshape(-1)'''
 
 
-'''while not done:
+while not done:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             done = True
@@ -537,4 +581,4 @@ point_2 = np.array(intersect_2.coords).reshape(-1)'''
 
         set_bg()
         # set_data(total_time * 0.1)
-        pg.display.flip()'''
+        pg.display.flip()

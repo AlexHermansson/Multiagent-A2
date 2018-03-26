@@ -51,7 +51,7 @@ class VRP_GA():
             self.generation_scores=np.append(self.generation_scores,best_score)
 
             if self.count>10:
-                self.check_unique()
+                #self.check_unique()
                 self.count=0
 
 
@@ -123,9 +123,39 @@ class VRP_GA():
                 max_cost = cost
             total_cost+=cost
 
-        loss=total_cost+self.lambd*max_cost
+        loss=(1-self.lambd)*total_cost+self.lambd*max_cost
 
-        return max_cost#loss
+        return loss
+
+    def fitness1(self, gene):
+
+        travel_list = self.create_travel_list(gene)
+        max_cost = -np.inf
+        total_cost=0
+        for path in travel_list:
+            L = len(path)
+            cost = 0
+            for i in range(L):
+
+                if i == 0:
+                    # if only start and goal in the path
+                    if i == L-1:
+                        cost += D_sg[path[i], path[i]]
+                    else:
+                        cost += D_sp[path[i]][path[i+1] - self.k]
+
+                else:
+
+                    if i == L - 1:
+                        cost += D_pg[path[0], path[i] - self.k]
+                    else:
+                        cost += D_pp[path[i] - self.k, path[i+1] - self.k]
+
+            if cost > max_cost:
+                max_cost = cost
+            total_cost+=cost
+
+        return max_cost
 
     def create_travel_list(self, gene):
         first_start = False  # says if we have found the first start position
@@ -185,8 +215,8 @@ class VRP_GA():
     def new_population(self, epsilon):
         new_population = np.zeros((self.population_size, self.N + self.k), dtype=int)
         for j in range(self.population_size):
-            x = self.gene_selection(batch_size=15)  # parents x and y
-            y = self.gene_selection(batch_size=15)
+            x = self.gene_selection(batch_size=6)  # parents x and y
+            y = self.gene_selection(batch_size=6)
             child1, child2 = self.crossover(x, y)
             if np.random.rand() < epsilon:
                 self.mutate(child1)
@@ -621,12 +651,12 @@ D_sg = np.load('D_sg_23.npy')
 
 N = len(points_to_visit) # number of pickup points
 k = len(start_positions) # number of robots
-pop_size = 3000
-generations = 150
+pop_size = 2000
+generations = 400
 #n_trials=30
 #N = 5# number of pickup points
 #k = 3 # number of robots
-lambd=6
+lambd=0.7
 vrp_ga = VRP_GA(N, k, D_pg, D_pp, D_sp, D_sg, pop_size,lambd,goal_positions)
 
 vrp_ga.genetic_algorithm(generations,True, 0.01)
@@ -635,9 +665,11 @@ plt.plot(vrp_ga.generation_scores)
 plt.xlabel('epoch')
 plt.ylabel('objective')
 plt.show()
-print(vrp_ga.best_score/vehicle_v_max)
+print(vrp_ga.best_score)
+
 
 best_gene=vrp_ga.best_gene
+print(vrp_ga.fitness1(best_gene)/vehicle_v_max)
 paths=vrp_ga.create_travel_list(best_gene)
 travel_list = path_decoder(paths)
 real_tl = real_travel_list(travel_list)
