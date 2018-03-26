@@ -46,3 +46,4 @@ sh_bounding_polygon = Polygon(bounding_polygon)
 min_x, min_y, max_x, max_y = sh_bounding_polygon.bounds
 
 a = 0
+
