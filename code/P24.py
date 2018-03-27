@@ -503,6 +503,7 @@ def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
 
     best_count = 0
     index = 0
+    best_index = 0
     for i,cluster in enumerate(point_list):
         count = cluster.count
 
@@ -513,6 +514,7 @@ def remove_best_cluster(triangles, sh_obstacles, vertices, sensor_range):
         if count > best_count:
             best_index = i
             best_count = count
+
         index += 1
 
     best_cluster = point_list[best_index]
@@ -614,7 +616,7 @@ screen.fill(background_colour)
 
 
 '''Loading the data from json'''
-data = json.load(open('P24.json'))
+data = json.load(open('P24_X.json'))
 
 bounding_polygon = data["bounding_polygon"]
 goal_positions=np.array(data["goal_positions"])
@@ -696,15 +698,15 @@ D_sp = set_distances(start_positions, points_to_visit, g)
 D_pp = point_distances(points_to_visit, g)
 D_pg = set_distances(goal_positions, points_to_visit, g)
 D_sg = set_distances(start_positions, goal_positions, g)
-np.save('D_sp_24', D_sp)
-np.save('D_pp_24', D_pp)
-np.save('D_pg_24', D_pg)
-np.save('D_sg_24', D_sg)
+np.save('D_sp_24_X', D_sp)
+np.save('D_pp_24_X', D_pp)
+np.save('D_pg_24_X', D_pg)
+np.save('D_sg_24_X', D_sg)
 
-#D_sp = np.load('D_sp_24.npy')
-#D_pp = np.load('D_pp_24.npy')
-#D_pg = np.load('D_pg_24.npy')
-#D_sg = np.load('D_sg_24.npy')
+#D_sp = np.load('D_sp_24_X.npy')
+#D_pp = np.load('D_pp_24_X.npy')
+#D_pg = np.load('D_pg_24_X.npy')
+#D_sg = np.load('D_sg_24_X.npy')
 
 N = len(points_to_visit) # number of pickup points
 k = len(start_positions) # number of robots
@@ -728,7 +730,7 @@ best_gene=vrp_ga.best_gene
 paths=vrp_ga.create_travel_list(best_gene)
 travel_list = path_decoder(paths)
 real_tl = real_travel_list(travel_list)
-np.savetxt('bestgene_24.txt',obst_vertices)
+np.savetxt('bestgene_24_X.txt',obst_vertices)
 
 
 
@@ -753,6 +755,3 @@ while not done:
     set_bg(cl)
     pg.display.flip()
     i+=1
-
-
-#todo: sample points
