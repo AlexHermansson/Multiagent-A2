@@ -673,7 +673,7 @@ print(vrp_ga.fitness1(best_gene)/vehicle_v_max)
 paths=vrp_ga.create_travel_list(best_gene)
 travel_list = path_decoder(paths)
 real_tl = real_travel_list(travel_list)
-np.savetxt('bestgene_23.txt',best_gene,fmt='%i')
+np.savetxt('77sec_bestgene_23.txt',best_gene,fmt='%i')
 
 time_step=0
 start = False
