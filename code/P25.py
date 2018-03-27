@@ -231,7 +231,7 @@ background_colour = (255, 255, 255)
 screen.fill(background_colour)
 
 # Data from the JSON file
-data = json.load(open('P25.json'))
+data = json.load(open('P25_X.json'))
 traj=json.load(open('P25_26_traj.json'))
 bounding_polygon = data["bounding_polygon"]
 formation_positions = np.array(data["formation_positions"])
@@ -247,6 +247,7 @@ traj_theta=traj["theta"]
 traj_x=traj["x"]
 traj_y=traj["y"]
 traj_pos=np.array(list(zip(traj_x,traj_y)))
+#start_positions=np.append(start_positions,traj_pos[0].reshape(1,2),axis=0)
 
 # Plot the bounding polygon
 pg_bounding_polygon = []
