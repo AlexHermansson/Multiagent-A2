@@ -384,7 +384,7 @@ while not done:
         while (t1 - t0 < 1):
             t1 = time.time()
         start = True
-    for t in range(20):
+    for t in range(5):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)
