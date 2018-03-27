@@ -202,7 +202,7 @@ def create_grid():
 	
 	# todo: Maybe change the grid. Too large space is now uncovered.
 	x_grid_points = np.arange(1, 5)*(x_biggest - x_smallest)/5
-	y_grid_points = np.arange(1, 3)*(y_biggest - y_smallest)/3
+	y_grid_points = np.arange(1, 4)*(y_biggest - y_smallest)/4
 
 	return x_grid_points, y_grid_points, x_smallest,x_biggest,y_smallest,y_biggest
 
@@ -250,48 +250,53 @@ def grid_check(CR_pos):
 
 
 def grid_check_352(CR_pos):
-	"""grid check for a 4-4-2 formation, returns an index from 0 to 9."""
+    '''grid check for a 4-4-2 formation, returns an index from 0 to 9.'''
 
-	CR_x, CR_y = CR_pos
+    CR_x, CR_y = CR_pos
 
-	if CR_x < xg[0] and CR_y > yg[1]:
-		return 0
+    if CR_x < xg[0] and CR_y > yg[2]:
+        return 0
 
-	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[1]:
-		return 0
+    elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[2]:
+        return 0
 
-	elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[1]:
-		return 1
+    elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[2]:
+        return 1
 
-	elif CR_x > xg[2] and CR_x < xg[3] and CR_y > yg[1]:
-		return 2
-
-    elif CR_x > xg[3] and CR_y > yg[1]:
+    elif CR_x > xg[2] and CR_x < xg[3] and CR_y > yg[2]:
         return 2
 
-	elif CR_x < xg[0] and CR_y > yg[0] and CR_y < yg[1]:
-		return 3
+    elif CR_x > xg[3] and CR_y > yg[2]:
+        return 2
 
-	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[0] and CR_y < yg[1]:
-		return 3
+    elif CR_x < xg[0] and CR_y > yg[0] and CR_y < yg[2]:
+        return 3
 
-	elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[0] and CR_y < yg[1]:
-		return 6
+    elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[0] and CR_y < yg[2]:
+        return 4
 
-	elif CR_x > xg[2] and CR_y > yg[0] and CR_y < yg[1]:
-		return 9
+    elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[0] and CR_y < yg[2]:
+        return 5
 
-	elif CR_x < xg[0] and CR_y < yg[0]:
-		return 0
+    elif CR_x > xg[2] and CR_x < xg[3] and CR_y > yg[0] and CR_y < yg[2]:
+        return 6
 
-	elif CR_x > xg[0] and CR_x < xg[1] and CR_y < yg[0]:
-		return 2
+    elif CR_x > xg[3] and CR_y > yg[0] and CR_y < yg[2]:
+        return 7
 
-	elif CR_x > xg[1] and CR_x < xg[2] and CR_y < yg[0]:
-		return 5
+    elif CR_x < xg[0] and CR_y < yg[0]:
+        return 9
 
-	elif CR_x > xg[2] and CR_y < yg[0]:
-		return 8
+    elif CR_x > xg[0] and CR_x < xg[1] and CR_y < yg[0]:
+        return 9
+
+    elif CR_x > xg[1] and CR_x < xg[2] and CR_y < yg[0]:
+        return 8
+    elif CR_x > xg[2] and CR_x < xg[3] and CR_y < yg[0]:
+        return 8
+
+    elif CR_x > xg[3] and CR_y < yg[0]:
+        return 8
 
 def colors(n):
     red=(255,0,0)
@@ -429,7 +434,7 @@ while not done:
         while (t1 - t0 < 1):
             t1 = time.time()
         start = True
-    for t in range(5):
+    for t in range(10):
         if not init_pos:
             if not np.isclose(robots.locations,vs.desired_pos).all():
                 robots.move(vs)
@@ -440,7 +445,7 @@ while not done:
         else:
 
             CR7=traj_pos[time_step]
-            robot_index=grid_check(CR7)
+            robot_index=grid_check_352(CR7)
 
 
             mean_des = vs.xi[0:2] + (CR7 - robots.locations[robot_index])
