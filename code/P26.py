@@ -201,7 +201,7 @@ def create_grid():
 			y_biggest = point[1]
 	
 	# todo: Maybe change the grid. Too large space is now uncovered.
-	x_grid_points = np.arange(1, 4)*(x_biggest - x_smallest)/4
+	x_grid_points = np.arange(1, 5)*(x_biggest - x_smallest)/5
 	y_grid_points = np.arange(1, 3)*(y_biggest - y_smallest)/3
 
 	return x_grid_points, y_grid_points, x_smallest,x_biggest,y_smallest,y_biggest
@@ -226,6 +226,51 @@ def grid_check(CR_pos):
 
 	elif CR_x < xg[0] and CR_y > yg[0] and CR_y < yg[1]:
 		return 1
+
+	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[0] and CR_y < yg[1]:
+		return 3
+
+	elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[0] and CR_y < yg[1]:
+		return 6
+
+	elif CR_x > xg[2] and CR_y > yg[0] and CR_y < yg[1]:
+		return 9
+
+	elif CR_x < xg[0] and CR_y < yg[0]:
+		return 0
+
+	elif CR_x > xg[0] and CR_x < xg[1] and CR_y < yg[0]:
+		return 2
+
+	elif CR_x > xg[1] and CR_x < xg[2] and CR_y < yg[0]:
+		return 5
+
+	elif CR_x > xg[2] and CR_y < yg[0]:
+		return 8
+
+
+def grid_check_352(CR_pos):
+	"""grid check for a 4-4-2 formation, returns an index from 0 to 9."""
+
+	CR_x, CR_y = CR_pos
+
+	if CR_x < xg[0] and CR_y > yg[1]:
+		return 0
+
+	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[1]:
+		return 0
+
+	elif CR_x > xg[1] and CR_x < xg[2] and CR_y > yg[1]:
+		return 1
+
+	elif CR_x > xg[2] and CR_x < xg[3] and CR_y > yg[1]:
+		return 2
+
+    elif CR_x > xg[3] and CR_y > yg[1]:
+        return 2
+
+	elif CR_x < xg[0] and CR_y > yg[0] and CR_y < yg[1]:
+		return 3
 
 	elif CR_x > xg[0] and CR_x < xg[1] and CR_y > yg[0] and CR_y < yg[1]:
 		return 3
@@ -331,7 +376,7 @@ background_colour = (255, 255, 255)
 screen.fill(background_colour)
 
 # Data from the JSON file
-data = json.load(open('P26.json'))
+data = json.load(open('P26_X.json'))
 traj=json.load(open('P25_26_traj.json'))
 bounding_polygon = data["bounding_polygon"]
 formation_positions = np.array(data["formation_positions"])
