@@ -288,9 +288,9 @@ while not done:
                 robots.start=True
         else:
             
-            #vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
-            #vs.update_structure(robots.locations)
-            vs.init_pos(traj_pos[time_step],traj_theta[time_step])
+            vs.set_des_xi(traj_pos[time_step],traj_theta[time_step])
+            vs.update_structure(robots.locations)
+            #vs.init_pos(traj_pos[time_step],traj_theta[time_step])
             robots.move(vs)
             if time_step + 1 < len(traj_t):
                 time_step += 1

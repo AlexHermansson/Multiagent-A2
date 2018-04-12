@@ -340,7 +340,7 @@ def colors(n):
 
 def to_pygame(coords):
     '''Convert coordinates into pygame coordinates'''
-    return (int(coords[0] * 14 + width / 2 - 150), int(coords[1] * -14 + height / 2 + 200))
+    return (int(coords[0] * 12 + width / 2 - 150), int(coords[1] * -12 + height / 2 + 200))
 
 
 def polygon_holes(sh_obstacles):
@@ -454,6 +454,14 @@ def visible_triangles(point, sh_obst, radius, tri_list):
                     (sh_tri3.intersects(obstacle) and not sh_tri3.touches(obstacle)):
                 triangle_bool=False
                 break
+
+        if not sh_bounding_polygon.contains(sh_tri1) or not sh_bounding_polygon.contains(sh_tri2) or not sh_bounding_polygon.contains(sh_tri3):
+            triangle_bool = False
+        '''if (sh_tri1.intersects(sh_bounding_polygon) and not sh_tri1.touches(sh_bounding_polygon)) or \
+                (sh_tri2.intersects(sh_bounding_polygon) and not sh_tri2.touches(sh_bounding_polygon)) or \
+                (sh_tri3.intersects(sh_bounding_polygon) and not sh_tri3.touches(sh_bounding_polygon)):
+            triangle_bool = False
+            break'''
 
         # If "valid" triangle, increment counter and add to list
         if triangle_bool:
@@ -642,6 +650,7 @@ sh_obstacles = []
 for obstacle in obstacles:
     sh_obstacles.append(Polygon(obstacle))
 
+sh_bounding_polygon=Polygon(bounding_polygon)
 cols=colors(6)
 
 '''set pygame obstacles anf bounding polygon'''
@@ -653,9 +662,9 @@ pg_bounding_polygon=list_to_pygame(bounding_polygon)
 
 '''Create the triangulation of the map.'''
 vertices = to_vertices(bounding_polygon, obstacles)
-#obst_vertices = vertices[len(bounding_polygon):].copy()
-obst_vertices=np.loadtxt('40_p24.txt')
-#np.random.shuffle(obst_vertices)
+obst_vertices = vertices[len(bounding_polygon):].copy()
+#obst_vertices=np.loadtxt('p24xbest.txt')
+np.random.shuffle(obst_vertices)
 holes = polygon_holes(sh_obstacles)
 segments = poly_to_segments(bounding_polygon, obstacles)
 map_dict = {'vertices':vertices, 'holes':holes, 'segments':segments}

@@ -319,10 +319,10 @@ def set_bg(boolean):
 
         for cluster in start_goal_clusters:
             pg.draw.circle(screen,(255,0,0),to_pygame(cluster.coords),2)
-            pg.draw.circle(screen, (0, 255, 0), to_pygame(cluster.coords), 16*sensor_range,1)
+            pg.draw.circle(screen, (0, 255, 0), to_pygame(cluster.coords), 14*sensor_range,1)
         for cluster in best_clusters:
             pg.draw.circle(screen, (0, 0, 255), to_pygame(cluster.coords), 2)
-            pg.draw.circle(screen, (0, 255, 0), to_pygame(cluster.coords), 16 * sensor_range, 1)
+            pg.draw.circle(screen, (0, 255, 0), to_pygame(cluster.coords), 14 * sensor_range, 1)
 
     else:
 
@@ -370,7 +370,7 @@ def colors(n):
 
 def to_pygame(coords):
     '''Convert coordinates into pygame coordinates'''
-    return (int(coords[0] * 14 + width / 2 - 150), int(coords[1] * -14 + height / 2 + 200))
+    return (int(coords[0] * 12 + width / 2 - 150), int(coords[1] * -12 + height / 2 + 200))
 
 def remove_start_goal(start_points, goal_points, points, sh_obst, range):
 
@@ -415,6 +415,8 @@ def visible(point1, point2, sh_obst):
         if line.intersects(obst):
             vis = False
             break
+    if not sh_bounding_polygon.contains(line):
+        vis=False
 
     return vis
 
@@ -570,7 +572,7 @@ screen.fill(background_colour)
 cols=colors(6)
 
 '''Loading the data from json'''
-data = json.load(open('P23.json'))
+data = json.load(open('P23_X.json'))
 
 bounding_polygon = data["bounding_polygon"]
 goal_positions=np.array(data["goal_positions"])
@@ -595,6 +597,8 @@ for d in data:
 sh_obstacles = []
 for obstacle in obstacles:
     sh_obstacles.append(Polygon(obstacle))
+
+sh_bounding_polygon=Polygon(bounding_polygon)
 
 '''set pygame obstacles anf bounding polygon'''
 pg_obstacles=[]
@@ -636,23 +640,27 @@ for edge in g.visgraph.edges:
     #pg_edges.append(list_to_pygame([p1,p2]))
 
 '''D_sp = set_distances(start_positions, points_to_visit, g)
+np.save('D_sp_23_x', D_sp)
+print('ciao')
 D_pp = point_distances(points_to_visit, g)
+np.save('D_pp_23_x', D_pp)
+print('ciao')
 D_pg = set_distances(goal_positions, points_to_visit, g)
+np.save('D_pg_23_x', D_pg)
+print('ciao')
 D_sg = set_distances(start_positions, goal_positions, g)
-np.save('D_sp_23', D_sp)
-np.save('D_pp_23', D_pp)
-np.save('D_pg_23', D_pg)
-np.save('D_sg_23', D_sg)'''
+np.save('D_sg_23_x', D_sg)
+print('ciao')'''
 
-D_sp = np.load('D_sp_23.npy')
-D_pp = np.load('D_pp_23.npy')
-D_pg = np.load('D_pg_23.npy')
-D_sg = np.load('D_sg_23.npy')
+D_sp = np.load('D_sp_23_x.npy')
+D_pp = np.load('D_pp_23_x.npy')
+D_pg = np.load('D_pg_23_x.npy')
+D_sg = np.load('D_sg_23_x.npy')
 
 N = len(points_to_visit) # number of pickup points
 k = len(start_positions) # number of robots
 pop_size = 2000
-generations = 400
+generations = 300
 #n_trials=30
 #N = 5# number of pickup points
 #k = 3 # number of robots
@@ -669,11 +677,13 @@ print(vrp_ga.best_score)
 
 
 best_gene=vrp_ga.best_gene
+#best_gene=np.loadtxt('p24xbest.txt',dtype=int)
 print(vrp_ga.fitness1(best_gene)/vehicle_v_max)
 paths=vrp_ga.create_travel_list(best_gene)
 travel_list = path_decoder(paths)
 real_tl = real_travel_list(travel_list)
 np.savetxt('77sec_bestgene_23.txt',best_gene,fmt='%i')
+
 
 time_step=0
 start = False
